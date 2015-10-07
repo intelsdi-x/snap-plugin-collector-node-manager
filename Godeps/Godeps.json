@@ -1,0 +1,31 @@
+{
+	"ImportPath": "github.com/intelsdi-x/pulse-plugin-collector-ipmi",
+	"GoVersion": "go1.4.2",
+	"Deps": [
+		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.7.3",
+			"Rev": "55eb11d21d2a31a3cc93838241d04800f52e823d"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/pulse/control/plugin",
+			"Comment": "0.2.0-78-g645f438",
+			"Rev": "645f438596eeae87de74a76136ff0d4b727c36bc"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/pulse/core/cdata",
+			"Comment": "0.2.0-78-g645f438",
+			"Rev": "645f438596eeae87de74a76136ff0d4b727c36bc"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/pulse/core/ctypes",
+			"Comment": "0.2.0-78-g645f438",
+			"Rev": "645f438596eeae87de74a76136ff0d4b727c36bc"
+		},
+		{
+			"ImportPath": "github.com/intelsdi-x/pulse/pkg/ctree",
+			"Comment": "0.2.0-78-g645f438",
+			"Rev": "645f438596eeae87de74a76136ff0d4b727c36bc"
+		}
+	]
+}
