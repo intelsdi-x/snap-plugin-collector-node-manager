@@ -1,0 +1,10 @@
+{
+	"ImportPath": "github.com/intelsdi-x/pulse-plugin-collector-ipmi",
+	"GoVersion": "go1.4.2",
+	"Deps": [
+		{
+			"ImportPath": "github.com/intelsdi-x/pulse",
+			"Rev": "0c1c681c7f550e4e03915a136da756cd6d4da58d"
+		}
+	]
+}
