@@ -4,7 +4,8 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/intelsdi-x/pulse",
-			"Rev": "0c1c681c7f550e4e03915a136da756cd6d4da58d"
+			"Comment": "v0.8.0-beta",
+			"Rev": "de2881352745c206284b74f4ef1165ba4510971a"
 		}
 	]
 }
