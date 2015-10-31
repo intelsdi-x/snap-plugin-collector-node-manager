@@ -136,34 +136,41 @@ func (ic *IpmiCollector) CollectMetrics(mts []plugin.PluginMetricType) ([]plugin
 		return nil, err
 	}
 
+	valid_metrics := len(mts)
 	for i, r := range resp {
 		format := requestDescList[i].Format
-		if err := format.Validate(r.Data); err != nil {
-			return nil, err
-		}
-		submetrics := format.Parse(r.Data)
-		for k, v := range submetrics {
-			path := extendPath(requestDescList[i].MetricsRoot, k)
-			responseCache[path] = v
+		if err := format.Validate(r); err != nil {
+			valid_metrics--;
+			submetrics := format.GetMetrics()
+			for _, submetric := range submetrics {
+				path := extendPath(requestDescList[i].MetricsRoot, submetric)
+				responseCache[path] = 0xFFFF
+			}
+		} else {
+			submetrics := format.Parse(r)
+			for k, v := range submetrics {
+				path := extendPath(requestDescList[i].MetricsRoot, k)
+				responseCache[path] = v
+			}
 		}
 	}
 
-	results := make([]plugin.PluginMetricType, len(mts))
+	results := make([]plugin.PluginMetricType, valid_metrics)
 	t := time.Now()
 	host, _ := os.Hostname()
 
 	for i, mt := range mts {
 		ns := mt.Namespace()
 		key := parseName(ns)
-		data := responseCache[key]
-		metric := plugin.PluginMetricType{Namespace_: ns, Source_: host,
-			Timestamp_: t, Data_: data}
-
-		results[i] = metric
+		// to return incomplete metrics remove condition
+		if responseCache[key] != 0xFFFF {
+			data := responseCache[key]
+			metric := plugin.PluginMetricType{Namespace_: ns, Source_: host, Timestamp_: t, Data_: data}
+			results[i] = metric
+		}
 	}
 
 	return results, nil
-
 }
 
 // Returns list of metrics available for current vendor.

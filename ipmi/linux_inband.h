@@ -32,6 +32,7 @@ struct IpmiStatusInfo {
 struct IpmiCommandOutput {
 	char data[1024];
 	int data_len;
+	int is_valid;
 };
 
 int IPMI_BatchCommands(char *device, struct IpmiCommandInput *inputs,
