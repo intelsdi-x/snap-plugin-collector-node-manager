@@ -73,6 +73,7 @@ func (al *LinuxInband) BatchExecRaw(requests []IpmiRequest, nSim int) ([]IpmiRes
 
 	for i, r := range outputs {
 		results[i].Data = C.GoBytes(unsafe.Pointer(&r.data[0]), r.data_len)
+		results[i].IsValid = uint(r.is_valid)
 	}
 
 	return results, nil
