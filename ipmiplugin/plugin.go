@@ -140,7 +140,7 @@ func (ic *IpmiCollector) CollectMetrics(mts []plugin.PluginMetricType) ([]plugin
 	for i, r := range resp {
 		format := requestDescList[i].Format
 		if err := format.Validate(r); err != nil {
-			valid_metrics--;
+			valid_metrics--
 			submetrics := format.GetMetrics()
 			for _, submetric := range submetrics {
 				path := extendPath(requestDescList[i].MetricsRoot, submetric)

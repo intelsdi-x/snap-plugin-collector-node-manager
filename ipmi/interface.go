@@ -35,7 +35,7 @@ type IpmiRequest struct {
 
 // Defines response data.
 type IpmiResponse struct {
-	Data []byte
+	Data    []byte
 	IsValid uint
 }
 

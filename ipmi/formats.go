@@ -69,14 +69,14 @@ func (p *ParserCUPS) Parse(response IpmiResponse) map[string]uint16 {
 	// Bytes 7:8 contains memory CUPS dynamic load factor
 	// Bytes 9:10 contains IO CUPS dynamic load factor
 	var names = map[string]uint{
-		"cpu_state": 4,
+		"cpu_cstate":      4,
 		"memory_bandwith": 6,
-		"io_bandwith": 8,
+		"io_bandwith":     8,
 	}
-	for metricName, startIndex := range names{
+	for metricName, startIndex := range names {
 		if response.IsValid == 1 {
-			m[metricName] = uint16(response.Data[startIndex]) + uint16(response.Data[startIndex+1]) * 256
-		} else{
+			m[metricName] = uint16(response.Data[startIndex]) + uint16(response.Data[startIndex+1])*256
+		} else {
 			m[metricName] = 0xFFFF
 		}
 	}
@@ -105,15 +105,15 @@ func (p *ParserNodeManager) Parse(response IpmiResponse) map[string]uint16 {
 	// Bytes 9:10 contains maximum value
 	// Bytes 11:12 contains average value
 	var names = map[string]uint{
-		"": 4,
+		"":    4,
 		"min": 6,
 		"max": 8,
 		"avg": 10,
 	}
-	for metricName, startIndex := range names{
+	for metricName, startIndex := range names {
 		if response.IsValid == 1 {
-			m[metricName] = uint16(response.Data[startIndex]) + uint16(response.Data[startIndex + 1]) * 256
-		}else {
+			m[metricName] = uint16(response.Data[startIndex]) + uint16(response.Data[startIndex+1])*256
+		} else {
 			m[metricName] = 0xFFFF
 		}
 	}
@@ -191,7 +191,7 @@ func (p *ParserPECI) Parse(response IpmiResponse) map[string]uint16 {
 	// Bytes 8:9 returns TJmax
 	if response.IsValid == 1 {
 		m["margin_offset"] = uint16(response.Data[6])
-		m[""] = uint16(response.Data[7]) + uint16(response.Data[8]) * 256
+		m[""] = uint16(response.Data[7]) + uint16(response.Data[8])*256
 	} else {
 		m["margin_offset"] = 0xFFFF
 		m[""] = 0xFFFF
@@ -217,10 +217,10 @@ func (p *ParserPMBus) GetMetrics() []string {
 func (p *ParserPMBus) Parse(response IpmiResponse) map[string]uint16 {
 	m := map[string]uint16{}
 	// Based on Send Raw PMBus Command (D9h). Bytes 9:N contains data received from PSU
-	var names = map[string]uint{"VR0": 4, "VR1": 6, "VR2": 8, "VR3": 10, "VR4": 12, "VR5": 14 }
-	for metricName, startIndex := range names{
+	var names = map[string]uint{"VR0": 4, "VR1": 6, "VR2": 8, "VR3": 10, "VR4": 12, "VR5": 14}
+	for metricName, startIndex := range names {
 		if response.IsValid == 1 {
-			m[metricName] = uint16(response.Data[startIndex]) + uint16(response.Data[startIndex + 1]) * 256
+			m[metricName] = uint16(response.Data[startIndex]) + uint16(response.Data[startIndex+1])*256
 		} else {
 			m[metricName] = 0xFFFF
 		}
