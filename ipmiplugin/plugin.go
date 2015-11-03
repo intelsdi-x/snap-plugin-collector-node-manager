@@ -35,7 +35,7 @@ import (
 
 const (
 	Name    = "pulse-collector-ipmi"
-	Version = 1
+	Version = 2
 	Type    = plugin.CollectorPluginType
 )
 
