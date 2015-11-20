@@ -35,7 +35,8 @@ type IpmiRequest struct {
 
 // Defines response data.
 type IpmiResponse struct {
-	Data []byte
+	Data    []byte
+	IsValid uint
 }
 
 // Vendor exposed structure. Defines request content and response format.
@@ -55,6 +56,6 @@ type RequestDescription struct {
 // Parse() extracts submetrics from binary data.
 type ParserFormat interface {
 	GetMetrics() []string
-	Validate(response []byte) error
-	Parse(response []byte) map[string]uint16
+	Validate(response IpmiResponse) error
+	Parse(response IpmiResponse) map[string]uint16
 }
