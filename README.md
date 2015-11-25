@@ -1,4 +1,4 @@
-# Pulse Intel Node Manager Collector Plugin
+# Snap Intel Node Manager Collector Plugin
 
  Plugin to collect data from Intel's Node Manager. Which is presenting low level metrics like power consumption, cpu temperature, etc.
  Currently it is using IPMI device to collect data from NM.
@@ -33,7 +33,8 @@ Include:
   - ipmi_msghandler
   - ipmi_devintf
   - ipmi_si
- Those modules provides specific IPMI device which can collect data from NM
+ 
+Those modules provides specific IPMI device which can collect data from NM
 
 ## Documentation
 
@@ -81,12 +82,12 @@ As we launch this plugin, we have a few items in mind for the next release:
 - Ipmitool support
 
 ## Community Support
-This repository is one of **many** plugins in the **Pulse Framework**: a powerful telemetry agent framework. To reach out on other use cases, visit:
+This repository is one of **many** plugins in the **Snap Framework**: a powerful telemetry agent framework. To reach out on other use cases, visit:
 
-* Pulse Gitter channel (@TODO Link)
+* Snap Gitter channel (@TODO Link)
 * Our Google Group (@TODO Link)
 
-The full project is at http://github.com:intelsdi-x/pulse.
+The full project is at http://github.com:intelsdi-x/snap.
 
 ## Contributing
 We love contributions! :heart_eyes:
@@ -94,7 +95,7 @@ We love contributions! :heart_eyes:
 There's more than one way to give back, from examples to blogs to code updates. See our recommended process in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
-Pulse, along with this plugin, is an Open Source software released under the Apache 2.0 [License](LICENSE).
+Snap, along with this plugin, is an Open Source software released under the Apache 2.0 [License](LICENSE).
 
 ## Acknowledgements
 List authors, co-authors and anyone you'd like to mention
