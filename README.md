@@ -12,7 +12,7 @@
   * [Roadmap](#roadmap)
 3. [Community Support](#community-support)
 4. [Contributing](#contributing)
-5. [License](#license-and-authors)
+5. [License](#license)
 6. [Acknowledgements](#acknowledgements)
 
 ## Getting Started
