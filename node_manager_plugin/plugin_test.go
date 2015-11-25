@@ -19,14 +19,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package ipmiplugin
+package node_manager_plugin
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/intelsdi-x/pulse-plugin-collector-ipmi/ipmi"
-	"github.com/intelsdi-x/pulse/control/plugin"
+	"github.com/intelsdi-x/snap-plugin-collector-ipmi/ipmi"
+	"github.com/intelsdi-x/snap/control/plugin"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
