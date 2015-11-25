@@ -2,7 +2,7 @@ Below is a default CONTRIBUTING.md file for all projects published under the [In
 
 Please open a PR if you think anything should change!
 
-# Pulse Intel Node Manager Collector Plugin
+# Snap Intel Node Manager Collector Plugin
 
 
 1. [Contributing Code](#contributing-code)
@@ -43,7 +43,7 @@ Have you written a blog post about how you use $PROJECT? Send it to us! << TODO 
 
 
 ## Contribute Elsewhere
-This repository is one of **many** plugins in the **Pulse Framework**: a powerful telemetry agent framework. See the full project at http://github.com/intelsdi-x/pulse
+This repository is one of **many** plugins in the **Snap Framework**: a powerful telemetry agent framework. See the full project at http://github.com/intelsdi-x/snap
 
 ## Thank You
 And **thank you!** Your contribution is incredibly important to us.
