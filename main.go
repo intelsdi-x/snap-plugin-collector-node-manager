@@ -24,19 +24,19 @@ package main
 import (
 	"os"
 
-	"github.com/intelsdi-x/pulse-plugin-collector-ipmi/ipmi"
-	"github.com/intelsdi-x/pulse-plugin-collector-ipmi/ipmiplugin"
-	"github.com/intelsdi-x/pulse/control/plugin"
+	"github.com/intelsdi-x/snap-plugin-collector-node-manager/ipmi"
+	"github.com/intelsdi-x/snap-plugin-collector-node-manager/node_manager_plugin"
+	"github.com/intelsdi-x/snap/control/plugin"
 )
 
 func main() {
 
 	ipmilayer := &ipmi.LinuxInband{Device: "/dev/ipmi0"}
 
-	ipmiCollector := &ipmiplugin.IpmiCollector{IpmiLayer: ipmilayer,
+	ipmiCollector := &node_manager_plugin.IpmiCollector{IpmiLayer: ipmilayer,
 		Vendor: ipmi.GenericVendor, NSim: 3}
 
-	plugin.Start(plugin.NewPluginMeta(ipmiplugin.Name, ipmiplugin.Version,
-		ipmiplugin.Type, []string{}, []string{plugin.PulseGOBContentType},
+	plugin.Start(plugin.NewPluginMeta(node_manager_plugin.Name, node_manager_plugin.Version,
+		node_manager_plugin.Type, []string{}, []string{plugin.SnapGOBContentType},
 		plugin.ConcurrencyCount(1)), ipmiCollector, os.Args[1])
 }
