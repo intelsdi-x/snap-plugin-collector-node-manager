@@ -19,7 +19,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package ipmiplugin
+package node_manager_plugin
 
 import (
 	"fmt"
@@ -28,18 +28,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/intelsdi-x/pulse-plugin-collector-ipmi/ipmi"
-	"github.com/intelsdi-x/pulse/control/plugin"
-	"github.com/intelsdi-x/pulse/control/plugin/cpolicy"
+	"github.com/intelsdi-x/snap-plugin-collector-node-manager/ipmi"
+	"github.com/intelsdi-x/snap/control/plugin"
+	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
 )
 
 const (
-	Name    = "pulse-collector-ipmi"
+	Name    = "snap-collector-intel-node-manager"
 	Version = 2
 	Type    = plugin.CollectorPluginType
 )
 
-var namespace_prefix = []string{"intel", "ipmi"}
+var namespace_prefix = []string{"intel", "node_manager"}
 
 func makeName(metric string) []string {
 	return append(namespace_prefix, strings.Split(metric, "/")...)
