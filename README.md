@@ -1,10 +1,11 @@
-# Snap Intel Node Manager Collector Plugin
+# snap publisher plugin - Intel Node Manager
 
  Plugin to collect data from Intel's Node Manager. Which is presenting low level metrics like power consumption, cpu temperature, etc.
  Currently it is using IPMI device to collect data from NM.
 
 1. [Getting Started](#getting-started)
   * [System Requirements](#system-requirements)
+  * [Installation](#installation)
   * [Configuration and Usage](configuration-and-usage)
 2. [Documentation](#documentation)
   * [Collected Metrics](#collected-metrics)
@@ -21,11 +22,24 @@
 
 ### System Requirements
 
-Include:
-
  - Plugin needs to be run on server platform which supports Intel Node Manager.
  - Currently it works only on Linux Servers
 
+### Installation
+#### Download Intel Node Manager plugin binary:
+You can get the pre-built binaries for your OS and architecture at snap's [Github Releases](https://github.com/intelsdi-x/snap/releases) page.
+
+#### To build the plugin binary:
+Fork https://github.com/intelsdi-x/snap-plugin-collector-node-manager
+Clone repo into `$GOPATH/src/github/intelsdi-x/`:
+```
+$ git clone https://github.com/<yourGithubID>/snap-plugin-collector-node-manager
+```
+Build the plugin by running make in repo:
+```
+$ make
+```
+This builds the plugin in `/build/rootfs`
 
 ### Configuration and Usage
 
@@ -76,32 +90,121 @@ Namespace | Data Type | Description (optional)
 /intel/node_manager/temperature/inlet/max | uint16 | Maximal Inlet Temperature
 /intel/node_manager/temperature/inlet/min | uint16 | Minimal Inlet Temperature
 
+### Examples
+Example task manifest to use Intel Node Manager plugin:
+```
+{
+    "version": 1,
+    "schedule": {
+        "type": "simple",
+        "interval": "5s"
+    },
+    "workflow": {
+        "collect": {
+            "metrics": {
+                "/intel/node_manager/airflow": {},
+                "/intel/node_manager/airflow/avg": {},
+                "/intel/node_manager/airflow/max": {},
+                "/intel/node_manager/airflow/min": {},
+                "/intel/node_manager/cups/cpu_cstate": {},
+                "/intel/node_manager/cups/io_bandwith": {},
+                "/intel/node_manager/cups/memory_bandwith": {},
+                "/intel/node_manager/margin/cpu/tj": {},
+                "/intel/node_manager/margin/cpu/tj/margin_offset": {},
+                "/intel/node_manager/power/cpu": {},
+                "/intel/node_manager/power/cpu/avg": {},
+                "/intel/node_manager/power/cpu/max": {},
+                "/intel/node_manager/power/cpu/min": {},
+                "/intel/node_manager/power/memory": {},
+                "/intel/node_manager/power/memory/avg": {},
+                "/intel/node_manager/power/memory/max": {},
+                "/intel/node_manager/power/memory/min": {},
+                "/intel/node_manager/power/system": {},
+                "/intel/node_manager/power/system/avg": {},
+                "/intel/node_manager/power/system/max": {},
+                "/intel/node_manager/power/system/min": {},
+                "/intel/node_manager/temperature/cpu/cpu/0": {},
+                "/intel/node_manager/temperature/cpu/cpu/1": {},
+                "/intel/node_manager/temperature/memory/dimm/0": {},
+                "/intel/node_manager/temperature/memory/dimm/1": {},
+                "/intel/node_manager/temperature/memory/dimm/10": {},
+                "/intel/node_manager/temperature/memory/dimm/11": {},
+                "/intel/node_manager/temperature/memory/dimm/12": {},
+                "/intel/node_manager/temperature/memory/dimm/13": {},
+                "/intel/node_manager/temperature/memory/dimm/14": {},
+                "/intel/node_manager/temperature/memory/dimm/15": {},
+                "/intel/node_manager/temperature/memory/dimm/16": {},
+                "/intel/node_manager/temperature/memory/dimm/17": {},
+                "/intel/node_manager/temperature/memory/dimm/18": {},
+                "/intel/node_manager/temperature/memory/dimm/19": {},
+                "/intel/node_manager/temperature/memory/dimm/2": {},
+                "/intel/node_manager/temperature/memory/dimm/20": {},
+                "/intel/node_manager/temperature/memory/dimm/21": {},
+                "/intel/node_manager/temperature/memory/dimm/22": {},
+                "/intel/node_manager/temperature/memory/dimm/23": {},
+                "/intel/node_manager/temperature/memory/dimm/24": {},
+                "/intel/node_manager/temperature/memory/dimm/25": {},
+                "/intel/node_manager/temperature/memory/dimm/26": {},
+                "/intel/node_manager/temperature/memory/dimm/27": {},
+                "/intel/node_manager/temperature/memory/dimm/28": {},
+                "/intel/node_manager/temperature/memory/dimm/29": {},
+                "/intel/node_manager/temperature/memory/dimm/3": {},
+                "/intel/node_manager/temperature/memory/dimm/30": {},
+                "/intel/node_manager/temperature/memory/dimm/31": {},
+                "/intel/node_manager/temperature/memory/dimm/32": {},
+                "/intel/node_manager/temperature/memory/dimm/33": {},
+                "/intel/node_manager/temperature/memory/dimm/34": {},
+                "/intel/node_manager/temperature/memory/dimm/35": {},
+                "/intel/node_manager/temperature/memory/dimm/36": {},
+                "/intel/node_manager/temperature/memory/dimm/4": {},
+                "/intel/node_manager/temperature/memory/dimm/5": {},
+                "/intel/node_manager/temperature/memory/dimm/6": {},
+                "/intel/node_manager/temperature/memory/dimm/7": {},
+                "/intel/node_manager/temperature/memory/dimm/8": {},
+                "/intel/node_manager/temperature/memory/dimm/9": {},
+                "/intel/node_manager/temperature/outlet": {},
+                "/intel/node_manager/temperature/outlet/avg": {},
+                "/intel/node_manager/temperature/outlet/max": {},
+                "/intel/node_manager/temperature/outlet/min": {}
+            },
+            "config": {
+            },
+            "process": null,
+            "publish": [
+                {
+                    "plugin_name": "file",
+                    "plugin_version": 2,
+                    "config": {
+                        "file": "/tmp/published"
+                    }
+                }
+            ]
+        }
+    }
+}
+```
+
+
 ### Roadmap
 As we launch this plugin, we have a few items in mind for the next release:
 - Out-Of-Band Support
 - Ipmitool support
 
 ## Community Support
-This repository is one of **many** plugins in the **Snap Framework**: a powerful telemetry agent framework. To reach out on other use cases, visit:
-
-* Snap Gitter channel (@TODO Link)
-* Our Google Group (@TODO Link)
-
-The full project is at http://github.com:intelsdi-x/snap.
+This repository is one of **many** plugins in **snap**, a powerful telemetry framework. See the full project at http://github.com/intelsdi-x/snap To reach out to other users, head to the [main framework](https://github.com/intelsdi-x/snap#community-support)
 
 ## Contributing
-We love contributions! :heart_eyes:
+We love contributions!
 
 There's more than one way to give back, from examples to blogs to code updates. See our recommended process in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
-Snap, along with this plugin, is an Open Source software released under the Apache 2.0 [License](LICENSE).
+[snap](http://github.com:intelsdi-x/snap), along with this plugin, is an Open Source software released under the Apache 2.0 [License](LICENSE).
 
 ## Acknowledgements
-List authors, co-authors and anyone you'd like to mention
 
 * Author: [Lukasz Mroz](https://github.com/lmroz)
 * Author: [Marcin Krolik](https://github.com/marcin-krolik)
 * Author: [Patryk Matyjasek](https://github.com/PatrykMatyjasek)
 
-**Thank you!** Your contribution is incredibly important to us.
+And **thank you!** Your contribution, through code and participation, is incredibly important to us.
