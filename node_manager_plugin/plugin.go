@@ -34,8 +34,8 @@ import (
 )
 
 const (
-	Name    = "snap-collector-intel-node-manager"
-	Version = 3
+	Name    = "node-manager"
+	Version = 4
 	Type    = plugin.CollectorPluginType
 )
 
