@@ -23,7 +23,8 @@ package ipmi
 
 // Abstract type for ipmi backend.
 type IpmiAL interface {
-	BatchExecRaw(requests []IpmiRequest, nSim int) ([]IpmiResponse, error)
+	BatchExecRaw(requests []IpmiRequest, host string) ([]IpmiResponse, error)
+	GetPlatformCapabilities(requests []RequestDescription, host []string) map[string][]RequestDescription
 }
 
 // Defines request parameter passed to abstraction layer.

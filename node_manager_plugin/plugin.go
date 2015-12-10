@@ -25,28 +25,28 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/intelsdi-x/snap-plugin-collector-node-manager/ipmi"
 	"github.com/intelsdi-x/snap/control/plugin"
 	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
+	"github.com/intelsdi-x/snap/core/ctypes"
 )
 
 const (
 	Name    = "node-manager"
-	Version = 4
+	Version = 5
 	Type    = plugin.CollectorPluginType
 )
 
-var namespace_prefix = []string{"intel", "node_manager"}
+var namespacePrefix = []string{"intel", "node_manager"}
 
 func makeName(metric string) []string {
-	return append(namespace_prefix, strings.Split(metric, "/")...)
+	return append(namespacePrefix, strings.Split(metric, "/")...)
 }
 
 func parseName(namespace []string) string {
-	return strings.Join(namespace[len(namespace_prefix):], "/")
+	return strings.Join(namespace[len(namespacePrefix):], "/")
 }
 
 func extendPath(path, ext string) string {
@@ -64,39 +64,20 @@ func extendPath(path, ext string) string {
 // RAW request data, root path for metrics
 // and format (which also specifies submetrics)
 type IpmiCollector struct {
-	IpmiLayer ipmi.IpmiAL
-	NSim      int
-	Vendor    []ipmi.RequestDescription
-
-	requestIndexCache     map[string]int
-	requestIndexCacheOnce sync.Once
-}
-
-func (ic *IpmiCollector) ensureRequestIdxCache() {
-	ic.requestIndexCache = make(map[string]int)
-
-	for i, req := range ic.Vendor {
-		for _, metric := range req.Format.GetMetrics() {
-			path := extendPath(req.MetricsRoot, metric)
-			ic.requestIndexCache[path] = i
-		}
-	}
+	IpmiLayer   ipmi.IpmiAL
+	Vendor      map[string][]ipmi.RequestDescription
+	Hosts       []string
+	Mode        string
+	Initialized bool
+	NSim        int
 }
 
 func (ic *IpmiCollector) validateName(namespace []string) error {
-	for i, e := range namespace_prefix {
+	for i, e := range namespacePrefix {
 		if namespace[i] != e {
 			return fmt.Errorf("Wrong namespace prefix in namespace %v", namespace)
 		}
 	}
-
-	name := parseName(namespace)
-	_, ok := ic.requestIndexCache[name]
-
-	if !ok {
-		return fmt.Errorf("Key %s not in index cache", name)
-	}
-
 	return nil
 }
 
@@ -105,88 +86,128 @@ func (ic *IpmiCollector) validateName(namespace []string) error {
 // Timestamp is set to time when batch processing is complete.
 // Source is hostname returned by operating system.
 func (ic *IpmiCollector) CollectMetrics(mts []plugin.PluginMetricType) ([]plugin.PluginMetricType, error) {
-
-	ic.requestIndexCacheOnce.Do(func() {
-		ic.ensureRequestIdxCache()
-	})
-
-	requestSet := map[int]bool{}
-	for _, mt := range mts {
-		ns := mt.Namespace()
-		if err := ic.validateName(ns); err != nil {
-			return nil, err
+	if !ic.Initialized {
+		ic.construct(mts[0].Config().Table()) //reinitialize plugin
+	}
+	requestList := make(map[string][]ipmi.IpmiRequest, 0)
+	requestDescList := make(map[string][]ipmi.RequestDescription, 0)
+	responseCache := map[string]map[string]uint16{}
+	for _, host := range ic.Hosts {
+		requestList[host] = make([]ipmi.IpmiRequest, 0)
+		requestDescList[host] = make([]ipmi.RequestDescription, 0)
+		for _, request := range ic.Vendor[host] {
+			requestList[host] = append(requestList[host], request.Request)
+			requestDescList[host] = append(requestDescList[host], request)
 		}
-		rid := ic.requestIndexCache[parseName(ns)]
-		requestSet[rid] = true
+	}
+	response := make(map[string][]ipmi.IpmiResponse, 0)
+
+	for _, host := range ic.Hosts {
+		response[host], _ = ic.IpmiLayer.BatchExecRaw(requestList[host], host)
 	}
 
-	requestList := make([]ipmi.IpmiRequest, 0)
-	requestDescList := make([]*ipmi.RequestDescription, 0)
-	responseCache := map[string]uint16{}
-	for k, _ := range requestSet {
-		desc := &ic.Vendor[k]
-		requestList = append(requestList, desc.Request)
-		requestDescList = append(requestDescList, desc)
-	}
-
-	//TODO: nSim from config
-	resp, err := ic.IpmiLayer.BatchExecRaw(requestList, ic.NSim)
-
-	if err != nil {
-		return nil, err
-	}
-
-	valid_metrics := len(mts)
-	for i, r := range resp {
-		format := requestDescList[i].Format
-		if err := format.Validate(r); err != nil {
-			valid_metrics--
-			submetrics := format.GetMetrics()
-			for _, submetric := range submetrics {
-				path := extendPath(requestDescList[i].MetricsRoot, submetric)
-				responseCache[path] = 0xFFFF
+	for nmResponseIdx, hostResponses := range response {
+		cached := map[string]uint16{}
+		for i, resp := range hostResponses {
+			format := requestDescList[nmResponseIdx][i].Format
+			if err := format.Validate(resp); err != nil {
+				return nil, err
 			}
-		} else {
-			submetrics := format.Parse(r)
+			submetrics := format.Parse(resp)
 			for k, v := range submetrics {
-				path := extendPath(requestDescList[i].MetricsRoot, k)
-				responseCache[path] = v
+				path := extendPath(requestDescList[nmResponseIdx][i].MetricsRoot, k)
+				cached[path] = v
 			}
+			responseCache[nmResponseIdx] = cached
 		}
 	}
 
-	results := make([]plugin.PluginMetricType, valid_metrics)
+	results := make([]plugin.PluginMetricType, len(mts))
+	responseMetrics := make([]plugin.PluginMetricType, 0)
 	t := time.Now()
-	host, _ := os.Hostname()
 
-	for i, mt := range mts {
-		ns := mt.Namespace()
-		key := parseName(ns)
-		// to return incomplete metrics remove condition
-		if responseCache[key] != 0xFFFF {
-			data := responseCache[key]
-			metric := plugin.PluginMetricType{Namespace_: ns, Source_: host, Timestamp_: t, Data_: data}
+	for _, host := range ic.Hosts {
+		for i, mt := range mts {
+			ns := mt.Namespace()
+			key := parseName(ns)
+			data := responseCache[host][key]
+			metric := plugin.PluginMetricType{Namespace_: ns, Source_: host,
+				Timestamp_: t, Data_: data}
 			results[i] = metric
+			responseMetrics = append(responseMetrics, metric)
 		}
 	}
 
-	return results, nil
+	return responseMetrics, nil
+}
+
+func getMode(config map[string]ctypes.ConfigValue) string {
+	if mode, ok := config["mode"]; ok {
+		return mode.(ctypes.ConfigValueStr).Value
+	}
+	return "legacy_inband" //Default mode
+}
+
+func getChannel(config map[string]ctypes.ConfigValue) string {
+	if channel, ok := config["channel"]; ok {
+		return channel.(ctypes.ConfigValueStr).Value
+	}
+	return "0x00" //Default channel addr
+}
+
+func getSlave(config map[string]ctypes.ConfigValue) string {
+	if slave, ok := config["slave"]; ok {
+		return slave.(ctypes.ConfigValueStr).Value
+	}
+	return "0x00" //Default slave addr
+}
+
+func (ic *IpmiCollector) construct(cfg map[string]ctypes.ConfigValue) {
+	var hostList []string
+	var ipmiLayer ipmi.IpmiAL
+	ic.Mode = getMode(cfg)
+	channel := getChannel(cfg)
+	slave := getSlave(cfg)
+
+	host, _ := os.Hostname()
+	fmt.Println(host)
+	if ic.Mode == "legacy_inband" {
+		ipmiLayer = &ipmi.LinuxInBandIpmitool{Device: "ipmitool", Channel: channel, Slave: slave}
+		hostList = []string{host}
+	} else {
+		return
+	}
+	ic.IpmiLayer = ipmiLayer
+	ic.Hosts = hostList
+	ic.Vendor = ipmiLayer.GetPlatformCapabilities(ipmi.GenericVendor, hostList)
+
 }
 
 // Returns list of metrics available for current vendor.
-func (ic *IpmiCollector) GetMetricTypes(_ plugin.PluginConfigType) ([]plugin.PluginMetricType, error) {
+func (ic *IpmiCollector) GetMetricTypes(cfg plugin.PluginConfigType) ([]plugin.PluginMetricType, error) {
+	ic.construct(cfg.Table())
 	mts := make([]plugin.PluginMetricType, 0)
-	for _, req := range ic.Vendor {
-		for _, metric := range req.Format.GetMetrics() {
-			path := extendPath(req.MetricsRoot, metric)
-			mts = append(mts, plugin.PluginMetricType{Namespace_: makeName(path)})
+	if ic.IpmiLayer == nil {
+		return mts, fmt.Errorf("Wrong mode configuration")
+	}
+	for _, host := range ic.Hosts {
+		for _, req := range ic.Vendor[host] {
+			for _, metric := range req.Format.GetMetrics() {
+				path := extendPath(req.MetricsRoot, metric)
+				mts = append(mts, plugin.PluginMetricType{Namespace_: makeName(path), Source_: host})
+			}
 		}
 	}
-
+	ic.Initialized = true
 	return mts, nil
 }
 
 func (ic *IpmiCollector) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
 	c := cpolicy.New()
 	return c, nil
+}
+
+func New() *IpmiCollector {
+	collector := &IpmiCollector{Initialized: false}
+	return collector
 }

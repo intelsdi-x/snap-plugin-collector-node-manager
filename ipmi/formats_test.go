@@ -54,12 +54,12 @@ func TestCUPSParsing(t *testing.T) {
 		a := &ParserCUPS{}
 		metrics := a.GetMetrics()
 		parserOut := a.Parse(validResponse)
-		expects := []string{"cpu_cstate", "memory_bandwith", "io_bandwith"}
+		expects := []string{"cpu_bandwith", "memory_bandwith", "io_bandwith"}
 		So(len(metrics), ShouldEqual, len(expects))
 		for i := 0; i < len(expects); i++ {
 			So(metrics[i], ShouldEqual, expects[i])
 		}
-		So(parserOut["cpu_cstate"], ShouldEqual, 100)
+		So(parserOut["cpu_bandwith"], ShouldEqual, 100)
 		So(parserOut["memory_bandwith"], ShouldEqual, 80)
 		So(parserOut["io_bandwith"], ShouldEqual, 256)
 	})
@@ -67,6 +67,7 @@ func TestCUPSParsing(t *testing.T) {
 
 func TestNodeManagerParsing(t *testing.T) {
 	Convey("Check NodeManager parser", t, func() {
+
 		validResponse := IpmiResponse{[]byte{0x00, 0x57, 0x01, 0x00, 0x69, 0x00, 0x03, 0x00, 0x7d, 0x01, 0x6E, 0x00, 0xC7, 0x3F, 0x05, 0x56, 0xB9, 0xAD, 0x0C, 0x00, 0x50}, 1}
 		a := &ParserNodeManager{}
 		metrics := a.GetMetrics()
@@ -135,20 +136,20 @@ func TestTemperatureParsing(t *testing.T) {
 		metrics := a.GetMetrics()
 		fmt.Println(metrics)
 		parserOut := a.Parse(validResponse)
-		expects := []string{"cpu/cpu0", "cpu/cpu1", "cpu/cpu2", "cpu/cpu3",
-			"memory/dimm0", "memory/dimm1", "memory/dimm2", "memory/dimm3", "memory/dimm4",
-			"memory/dimm5", "memory/dimm6", "memory/dimm7", "memory/dimm8", "memory/dimm9",
-			"memory/dimm10", "memory/dimm11", "memory/dimm12", "memory/dimm13", "memory/dimm14",
-			"memory/dimm15", "memory/dimm16", "memory/dimm17", "memory/dimm18", "memory/dimm19",
-			"memory/dimm20", "memory/dimm21", "memory/dimm22", "memory/dimm23", "memory/dimm24",
-			"memory/dimm25", "memory/dimm26", "memory/dimm27", "memory/dimm28", "memory/dimm29",
-			"memory/dimm30", "memory/dimm31", "memory/dimm32", "memory/dimm33", "memory/dimm34",
-			"memory/dimm35", "memory/dimm36", "memory/dimm37", "memory/dimm38", "memory/dimm39",
-			"memory/dimm40", "memory/dimm41", "memory/dimm42", "memory/dimm43", "memory/dimm44",
-			"memory/dimm45", "memory/dimm46", "memory/dimm47", "memory/dimm48", "memory/dimm49",
-			"memory/dimm50", "memory/dimm51", "memory/dimm52", "memory/dimm53", "memory/dimm54",
-			"memory/dimm55", "memory/dimm56", "memory/dimm57", "memory/dimm58", "memory/dimm59",
-			"memory/dimm60", "memory/dimm61", "memory/dimm62", "memory/dimm63"}
+		expects := []string{"cpu/0", "cpu/1", "cpu/2", "cpu/3",
+			"memory/dimm/0", "memory/dimm/1", "memory/dimm/2", "memory/dimm/3", "memory/dimm/4",
+			"memory/dimm/5", "memory/dimm/6", "memory/dimm/7", "memory/dimm/8", "memory/dimm/9",
+			"memory/dimm/10", "memory/dimm/11", "memory/dimm/12", "memory/dimm/13", "memory/dimm/14",
+			"memory/dimm/15", "memory/dimm/16", "memory/dimm/17", "memory/dimm/18", "memory/dimm/19",
+			"memory/dimm/20", "memory/dimm/21", "memory/dimm/22", "memory/dimm/23", "memory/dimm/24",
+			"memory/dimm/25", "memory/dimm/26", "memory/dimm/27", "memory/dimm/28", "memory/dimm/29",
+			"memory/dimm/30", "memory/dimm/31", "memory/dimm/32", "memory/dimm/33", "memory/dimm/34",
+			"memory/dimm/35", "memory/dimm/36", "memory/dimm/37", "memory/dimm/38", "memory/dimm/39",
+			"memory/dimm/40", "memory/dimm/41", "memory/dimm/42", "memory/dimm/43", "memory/dimm/44",
+			"memory/dimm/45", "memory/dimm/46", "memory/dimm/47", "memory/dimm/48", "memory/dimm/49",
+			"memory/dimm/50", "memory/dimm/51", "memory/dimm/52", "memory/dimm/53", "memory/dimm/54",
+			"memory/dimm/55", "memory/dimm/56", "memory/dimm/57", "memory/dimm/58", "memory/dimm/59",
+			"memory/dimm/60", "memory/dimm/61", "memory/dimm/62", "memory/dimm/63"}
 		So(len(metrics), ShouldEqual, len(expects))
 		for i := 0; i < len(metrics); i++ {
 			So(metrics[i], ShouldEqual, expects[i])

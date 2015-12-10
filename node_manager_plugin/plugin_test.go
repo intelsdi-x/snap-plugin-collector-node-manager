@@ -102,6 +102,7 @@ func (p *fakeParserSimple) Validate(response ipmi.IpmiResponse) error {
 		return p.validDefault
 	}
 }
+
 func (p *fakeParserSimple) Parse(response ipmi.IpmiResponse) map[string]uint16 {
 	p.parseCalled[bs2Str(response.Data)]++
 
@@ -228,16 +229,6 @@ func TestCollectMetrics(t *testing.T) {
 
 		})
 
-		/*Convey("Error should be returned if ipmi layer returned error", func() {
-
-			ipmilayer.ret_err = fmt.Errorf("TEST")
-
-			_, err_dut := sut.CollectMetrics(mts)
-
-			So(err_dut, ShouldNotBeNil)
-
-		})*/
-
 		Convey("Correct parser is called for each request", func() {
 
 			sut.CollectMetrics(mts)
@@ -255,10 +246,12 @@ func TestCollectMetrics(t *testing.T) {
 
 		Convey("Function returns what parser returned", func() {
 			expected := map[string]uint16{
+
 				ns2Str([]string{"intel", "node_manager", "a", "qwe"}):   1,
 				ns2Str([]string{"intel", "node_manager", "a", "rty"}):   2,
 				ns2Str([]string{"intel", "node_manager", "b/c", "ppp"}): 3,
 				ns2Str([]string{"intel", "node_manager", "b/d", "x"}):   4,
+
 			}
 
 			dut, _ := sut.CollectMetrics(mts)
@@ -275,7 +268,6 @@ func TestCollectMetrics(t *testing.T) {
 
 				sut.CollectMetrics(mts)
 
-//				So(len(format1.validateCalled), ShouldEqual, 1)
 				So(format1.validateCalled[bs2Str([]byte{0, 1})], ShouldEqual, 1)
 
 				So(len(format2.validateCalled), ShouldEqual, 1)
@@ -285,16 +277,6 @@ func TestCollectMetrics(t *testing.T) {
 				So(format3.validateCalled[bs2Str([]byte{0, 3})], ShouldEqual, 1)
 
 			})
-
-			/*Convey("If validation fails error is returned", func() {
-
-				format3.validMap[bs2Str([]byte{0, 3})] = fmt.Errorf("x")
-
-				_, err := sut.CollectMetrics(mts)
-
-				So(err, ShouldNotBeNil)
-
-			})*/
 
 		})
 
