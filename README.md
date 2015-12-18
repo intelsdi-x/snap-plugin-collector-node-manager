@@ -1,4 +1,4 @@
-# snap publisher plugin - Intel Node Manager
+# snap collector plugin - Intel Node Manager
 
  Plugin to collect data from Intel's Node Manager. Which is presenting low level metrics like power consumption, cpu temperature, etc.
  Currently it is using IPMI device to collect data from NM.
