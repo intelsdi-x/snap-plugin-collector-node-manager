@@ -21,25 +21,26 @@ limitations under the License.
 
 package ipmi
 
-// Abstract type for ipmi backend.
+// IpmiAL Abstract type for ipmi backend.
 type IpmiAL interface {
-	BatchExecRaw(requests []IpmiRequest, nSim int) ([]IpmiResponse, error)
+	BatchExecRaw(requests []IpmiRequest, host string) ([]IpmiResponse, error)
+	GetPlatformCapabilities(requests []RequestDescription, host []string) map[string][]RequestDescription
 }
 
-// Defines request parameter passed to abstraction layer.
+// IpmiRequest Defines request parameter passed to abstraction layer.
 type IpmiRequest struct {
 	Data    []byte
 	Channel int16
 	Slave   uint8
 }
 
-// Defines response data.
+// IpmiResponse Defines response data.
 type IpmiResponse struct {
 	Data    []byte
 	IsValid uint
 }
 
-// Vendor exposed structure. Defines request content and response format.
+// RequestDescription Vendor exposed structure. Defines request content and response format.
 // List of submetrics for given format should be concatenated with MetricsRoot
 // to specify full metric name.
 type RequestDescription struct {
@@ -48,7 +49,7 @@ type RequestDescription struct {
 	Format      ParserFormat
 }
 
-// Defines interface that all response formats must implement.
+// ParserFormat Defines interface that all response formats must implement.
 // GetMetrics() should return all available submetrics for given format.
 // Main metric value should have label "" (empty string).
 // Validate() should check response correctness. Nil is returned when response

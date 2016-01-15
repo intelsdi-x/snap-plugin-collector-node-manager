@@ -40,7 +40,7 @@ type LinuxInband struct {
 // nSim - number of request that are allowed to be 'in processing'.
 // Returns array of responses in order corresponding to requests.
 // Error is returned when any of requests failed.
-func (al *LinuxInband) BatchExecRaw(requests []IpmiRequest, nSim int) ([]IpmiResponse, error) {
+func (al *LinuxInband) BatchExecRaw(requests []IpmiRequest, _ string) ([]IpmiResponse, error) {
 	al.mutex.Lock()
 	defer al.mutex.Unlock()
 
@@ -59,7 +59,7 @@ func (al *LinuxInband) BatchExecRaw(requests []IpmiRequest, nSim int) ([]IpmiRes
 	}
 
 	errcode := C.IPMI_BatchCommands(C.CString(al.Device), &inputs[0], &outputs[0],
-		C.int(n), C.int(nSim), &info)
+		C.int(n), C.int(3), &info)
 
 	switch {
 	case errcode < 0:
@@ -77,4 +77,8 @@ func (al *LinuxInband) BatchExecRaw(requests []IpmiRequest, nSim int) ([]IpmiRes
 	}
 
 	return results, nil
+}
+
+func (al *LinuxInband) GetPlatformCapabilities(requests []RequestDescription, host []string) map[string][]RequestDescription {
+	return nil
 }
