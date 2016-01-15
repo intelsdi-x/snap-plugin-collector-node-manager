@@ -50,6 +50,28 @@ This builds the plugin in `/build/rootfs`
  
 Those modules provides specific IPMI device which can collect data from NM
 
+There are currently 3 configuration options:
+ - mode - defines mode of plugin work, possible values: legacy_inband
+ - channel - defines communication channel address (default: "0x00")
+ - slave - defines target address (default: "0x00")
+
+Sample configuration of node manager plugin:
+```
+{
+    "plugins": {
+        "collector": {
+            "node-manager": {
+                "all": {
+                    "mode": "legacy_inband",
+                    "channel": "0x00",
+                    "slave": "0x00"
+                }
+            }
+        }
+    }
+}
+```
+
 ## Documentation
 
 ### Collected Metrics
@@ -68,6 +90,7 @@ Namespace | Data Type | Description (optional)
 /intel/node_manager/power/cpu/avg | uint16 | Average CPU power consumption
 /intel/node_manager/power/cpu/max | uint16 | Maximal CPU power consumption
 /intel/node_manager/power/cpu/min | uint16 | Minimal CPU power consumption
+/intel/node_manager/power/policy/power_limit | uint16 | Power policy
 /intel/node_manager/margin/cpu/tj  | uint16 | Margin-to-throttle functional  (CPU)
 /intel/node_manager/margin/cpu/tj/margin_offset | uint16 | Margin-to-spec reliability (CPU)
 /intel/node_manager/power/memory | uint16 | Current Memory power consumption
@@ -151,11 +174,6 @@ Example task manifest to use Intel Node Manager plugin:
                 "/intel/node_manager/temperature/memory/dimm/3": {},
                 "/intel/node_manager/temperature/memory/dimm/30": {},
                 "/intel/node_manager/temperature/memory/dimm/31": {},
-                "/intel/node_manager/temperature/memory/dimm/32": {},
-                "/intel/node_manager/temperature/memory/dimm/33": {},
-                "/intel/node_manager/temperature/memory/dimm/34": {},
-                "/intel/node_manager/temperature/memory/dimm/35": {},
-                "/intel/node_manager/temperature/memory/dimm/36": {},
                 "/intel/node_manager/temperature/memory/dimm/4": {},
                 "/intel/node_manager/temperature/memory/dimm/5": {},
                 "/intel/node_manager/temperature/memory/dimm/6": {},
@@ -188,7 +206,6 @@ Example task manifest to use Intel Node Manager plugin:
 ### Roadmap
 As we launch this plugin, we have a few items in mind for the next release:
 - Out-Of-Band Support
-- Ipmitool support
 
 ## Community Support
 This repository is one of **many** plugins in **snap**, a powerful telemetry framework. See the full project at http://github.com/intelsdi-x/snap To reach out to other users, head to the [main framework](https://github.com/intelsdi-x/snap#community-support)
