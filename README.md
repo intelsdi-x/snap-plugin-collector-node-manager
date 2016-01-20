@@ -1,7 +1,7 @@
 # snap collector plugin - Intel Node Manager
 
  Plugin to collect data from Intel's Node Manager. Which is presenting low level metrics like power consumption, cpu temperature, etc.
- Currently it is using IPMI device to collect data from NM.
+ Currently it is using Ipmitool to collect data from NM.
 
 1. [Getting Started](#getting-started)
   * [System Requirements](#system-requirements)
@@ -24,6 +24,7 @@
 
  - Plugin needs to be run on server platform which supports Intel Node Manager.
  - Currently it works only on Linux Servers
+ - Ipmitool needs to be installed on platform
 
 ### Installation
 #### Download Intel Node Manager plugin binary:
