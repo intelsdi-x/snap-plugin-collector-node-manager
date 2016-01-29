@@ -35,11 +35,11 @@ import (
 
 const (
 	//Name is name of plugin
-	Name    = "node-manager"
+	Name = "node-manager"
 	//Version of plugin
-	Version = 5
+	Version = 6
 	//Type of plugin
-	Type    = plugin.CollectorPluginType
+	Type = plugin.CollectorPluginType
 )
 
 var namespacePrefix = []string{"intel", "node_manager"}
