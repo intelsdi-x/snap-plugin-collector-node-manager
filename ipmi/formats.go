@@ -42,7 +42,8 @@ func (gv *GenericValidator) Validate(response IpmiResponse) error {
 		}
 		return errors.New("Zero length response")
 	}
-	return errors.New("Resposne is not valid")
+	fmt.Println("Response is not valid")
+	return nil
 }
 
 // ParserCUPS extracts data from CUPS specific response format.

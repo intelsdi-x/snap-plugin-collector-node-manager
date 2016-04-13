@@ -37,7 +37,7 @@ const (
 	//Name is name of plugin
 	Name = "node-manager"
 	//Version of plugin
-	Version = 6
+	Version = 7
 	//Type of plugin
 	Type = plugin.CollectorPluginType
 )
@@ -72,15 +72,6 @@ type IpmiCollector struct {
 	Mode        string
 	Initialized bool
 	NSim        int
-}
-
-func (ic *IpmiCollector) validateName(namespace []string) error {
-	for i, e := range namespacePrefix {
-		if namespace[i] != e {
-			return fmt.Errorf("Wrong namespace prefix in namespace %v", namespace)
-		}
-	}
-	return nil
 }
 
 // CollectMetrics Performs metric collection.
@@ -144,54 +135,13 @@ func (ic *IpmiCollector) CollectMetrics(mts []plugin.PluginMetricType) ([]plugin
 	return responseMetrics, nil
 }
 
-func getMode(config map[string]ctypes.ConfigValue) string {
-	if mode, ok := config["mode"]; ok {
-		return mode.(ctypes.ConfigValueStr).Value
-	}
-	return "legacy_inband" //Default mode
-}
-
-func getChannel(config map[string]ctypes.ConfigValue) string {
-	if channel, ok := config["channel"]; ok {
-		return channel.(ctypes.ConfigValueStr).Value
-	}
-	return "0x00" //Default channel addr
-}
-
-func getSlave(config map[string]ctypes.ConfigValue) string {
-	if slave, ok := config["slave"]; ok {
-		return slave.(ctypes.ConfigValueStr).Value
-	}
-	return "0x00" //Default slave addr
-}
-
-func (ic *IpmiCollector) construct(cfg map[string]ctypes.ConfigValue) {
-	var hostList []string
-	var ipmiLayer ipmi.IpmiAL
-	ic.Mode = getMode(cfg)
-	channel := getChannel(cfg)
-	slave := getSlave(cfg)
-
-	host, _ := os.Hostname()
-	fmt.Println(host)
-	if ic.Mode == "legacy_inband" {
-		ipmiLayer = &ipmi.LinuxInBandIpmitool{Device: "ipmitool", Channel: channel, Slave: slave}
-		hostList = []string{host}
-	} else {
-		return
-	}
-	ic.IpmiLayer = ipmiLayer
-	ic.Hosts = hostList
-	ic.Vendor = ipmiLayer.GetPlatformCapabilities(ipmi.GenericVendor, hostList)
-
-}
-
 // GetMetricTypes Returns list of metrics available for current vendor.
 func (ic *IpmiCollector) GetMetricTypes(cfg plugin.PluginConfigType) ([]plugin.PluginMetricType, error) {
 	ic.construct(cfg.Table())
 	var mts []plugin.PluginMetricType
 	mts = make([]plugin.PluginMetricType, 0)
 	if ic.IpmiLayer == nil {
+		ic.Initialized = false
 		return mts, fmt.Errorf("Wrong mode configuration")
 	}
 	for _, host := range ic.Hosts {
@@ -217,3 +167,83 @@ func New() *IpmiCollector {
 	collector := &IpmiCollector{Initialized: false}
 	return collector
 }
+
+func (ic *IpmiCollector) validateName(namespace []string) error {
+	for i, e := range namespacePrefix {
+		if namespace[i] != e {
+			return fmt.Errorf("Wrong namespace prefix in namespace %v", namespace)
+		}
+	}
+	return nil
+}
+
+func getMode(config map[string]ctypes.ConfigValue) string {
+	if mode, ok := config["mode"]; ok {
+		return mode.(ctypes.ConfigValueStr).Value
+	}
+	return ""
+}
+
+func getChannel(config map[string]ctypes.ConfigValue) string {
+	if channel, ok := config["channel"]; ok {
+		return channel.(ctypes.ConfigValueStr).Value
+	}
+	return "0x00" //Default channel addr
+}
+
+func getSlave(config map[string]ctypes.ConfigValue) string {
+	if slave, ok := config["slave"]; ok {
+		return slave.(ctypes.ConfigValueStr).Value
+	}
+	return "0x00" //Default slave addr
+}
+
+func getPass(config map[string]ctypes.ConfigValue) string {
+	if pass, ok := config["password"]; ok {
+		return pass.(ctypes.ConfigValueStr).Value
+	}
+	return ""
+}
+
+func getUser(config map[string]ctypes.ConfigValue) string {
+	if user, ok := config["user"]; ok {
+		return user.(ctypes.ConfigValueStr).Value
+	}
+	return ""
+}
+
+func getHost(config map[string]ctypes.ConfigValue) string {
+	if host, ok := config["host"]; ok {
+		return host.(ctypes.ConfigValueStr).Value
+	}
+	return ""
+}
+
+func (ic *IpmiCollector) construct(cfg map[string]ctypes.ConfigValue) {
+	var hostList []string
+	var ipmiLayer ipmi.IpmiAL
+	ic.Mode = getMode(cfg)
+	channel := getChannel(cfg)
+	slave := getSlave(cfg)
+	user := getUser(cfg)
+	pass := getPass(cfg)
+	host, _ := os.Hostname()
+	if ic.Mode == "legacy_inband" {
+		ipmiLayer = &ipmi.LinuxInBandIpmitool{Device: "ipmitool", Channel: channel, Slave: slave}
+		hostList = []string{host}
+	} else if ic.Mode == "oob" {
+		ipmiLayer = &ipmi.LinuxOutOfBand{Device: "ipmitool", Channel: channel, Slave: slave, User: user, Pass: pass}
+		hostList = []string{getHost(cfg)}
+	} else if ic.Mode == "legacy_inband_openipmi" {
+		ipmiLayer = &ipmi.LinuxInband{}
+	} else {
+		return
+	}
+
+	ic.IpmiLayer = ipmiLayer
+	ic.Hosts = hostList
+	ic.Vendor = ipmiLayer.GetPlatformCapabilities(ipmi.GenericVendor, hostList)
+	ic.Initialized = true
+
+}
+
