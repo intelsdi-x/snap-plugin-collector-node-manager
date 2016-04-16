@@ -51,10 +51,13 @@ This builds the plugin in `/build/rootfs`
  
 Those modules provides specific IPMI device which can collect data from NM
 
-There are currently 3 configuration options:
- - mode - defines mode of plugin work, possible values: legacy_inband
+There are currently 6 configuration options:
+ - mode - defines mode of plugin work, possible values: legacy_inband, legacy_inband_openipmi, oob
  - channel - defines communication channel address (default: "0x00")
  - slave - defines target address (default: "0x00")
+ - user - for OOB mode only, user for authentication to remote host
+ - password - for OOB mode only, password for authentication to remote host
+ - host - for OOB mode only, IP of host which will be monitored OOB
 
 Sample configuration of node manager plugin:
 ```
@@ -206,7 +209,7 @@ Example task manifest to use Intel Node Manager plugin:
 
 ### Roadmap
 As we launch this plugin, we have a few items in mind for the next release:
-- Out-Of-Band Support
+- SDR readings support
 
 ## Community Support
 This repository is one of **many** plugins in **snap**, a powerful telemetry framework. See the full project at http://github.com/intelsdi-x/snap To reach out to other users, head to the [main framework](https://github.com/intelsdi-x/snap#community-support)

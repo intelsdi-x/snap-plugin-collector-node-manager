@@ -30,14 +30,13 @@ import (
 // #include "linux_inband.h"
 import "C"
 
-// Implements communication with openipmi driver on linux
+// LinuxInband Implements communication with openipmi driver on linux
 type LinuxInband struct {
 	Device string
 	mutex  sync.Mutex
 }
 
-// Performs batch of requests to given device.
-// nSim - number of request that are allowed to be 'in processing'.
+// BatchExecRaw Performs batch of requests to given device.
 // Returns array of responses in order corresponding to requests.
 // Error is returned when any of requests failed.
 func (al *LinuxInband) BatchExecRaw(requests []IpmiRequest, _ string) ([]IpmiResponse, error) {
@@ -79,6 +78,7 @@ func (al *LinuxInband) BatchExecRaw(requests []IpmiRequest, _ string) ([]IpmiRes
 	return results, nil
 }
 
+// GetPlatformCapabilities returns host NM capabilities
 func (al *LinuxInband) GetPlatformCapabilities(requests []RequestDescription, host []string) map[string][]RequestDescription {
 	return nil
 }

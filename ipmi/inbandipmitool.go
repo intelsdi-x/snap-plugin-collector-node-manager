@@ -49,16 +49,19 @@ func (al *LinuxInBandIpmitool) BatchExecRaw(requests []IpmiRequest, host string)
 	}
 
 	return results, nil
+
 }
 
-// GetPlatformCapabilities returns valid requests for server platform
+// GetPlatformCapabilities returns host NM capabilities
 func (al *LinuxInBandIpmitool) GetPlatformCapabilities(requests []RequestDescription, _ []string) map[string][]RequestDescription {
 	host, _ := os.Hostname()
 	validRequests := make(map[string][]RequestDescription, 0)
 	validRequests[host] = make([]RequestDescription, 0)
+
 	for _, request := range requests {
 		response := ExecIpmiToolLocal(request.Request.Data, al)
 		j := 0
+
 		for i := range response {
 			if response[i] == 0 {
 				j++
@@ -68,5 +71,7 @@ func (al *LinuxInBandIpmitool) GetPlatformCapabilities(requests []RequestDescrip
 			validRequests[host] = append(validRequests[host], request)
 		}
 	}
+
 	return validRequests
+
 }

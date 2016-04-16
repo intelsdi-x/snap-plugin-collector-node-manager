@@ -26,28 +26,64 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 // ExecIpmiToolLocal method runs ipmitool command on a local system
 func ExecIpmiToolLocal(request []byte, strct *LinuxInBandIpmitool) []byte {
-
 	c, err := exec.LookPath("ipmitool")
 	if err != nil {
-		fmt.Printf("Unable to find %s", "ipmitool")
-		return []byte{0x01, 0x02}
+		log.Debug("Unable to find ipmitool")
+		return nil
 	}
 
 	stringRequest := []string{"-b", strct.Channel, "-t", strct.Slave, "raw"}
 	for i := range request {
 		stringRequest = append(stringRequest, fmt.Sprintf("0x%02x", request[i]))
 	}
+
 	ret, err := exec.Command(c, stringRequest...).CombinedOutput()
+	if err != nil {
+		log.Debug("Unable to run ipmitool")
+		return nil
+	}
 	returnStrings := strings.Split(string(ret), " ")
 	rets := make([]byte, len(returnStrings))
 	for i, element := range returnStrings {
 		value, _ := strconv.ParseInt(element, 16, 0)
 		rets[i] = byte(value)
 	}
+
+	return rets
+}
+
+// ExecIpmiToolRemote method runs ipmitool command on a remote system
+func ExecIpmiToolRemote(request []byte, strct *LinuxOutOfBand, addr string) []byte {
+	c, err := exec.LookPath("ipmitool")
+	if err != nil {
+		log.Debug("Unable to find ipmitool")
+		return nil
+	}
+
+	a := []string{"-I", "lanplus", "-H", addr, "-U", strct.User, "-P", strct.Pass, "-b", strct.Channel, "-t", strct.Slave, "raw"}
+	for i := range request {
+		a = append(a, fmt.Sprintf("0x%02x", request[i]))
+	}
+
+	ret, err := exec.Command(c, a...).CombinedOutput()
+	if err != nil {
+		log.Debug("Unable to run ipmitool")
+		return nil
+	}
+
+	returnStrings := strings.Split(string(ret), " ")
+	rets := make([]byte, len(returnStrings))
+	for ind, el := range returnStrings {
+		value, _ := strconv.ParseInt(el, 16, 0)
+		rets[ind] = byte(value)
+	}
+
 	return rets
 
 }
