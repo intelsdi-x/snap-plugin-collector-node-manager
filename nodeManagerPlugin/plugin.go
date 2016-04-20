@@ -31,6 +31,7 @@ import (
 	"github.com/intelsdi-x/snap/control/plugin"
 	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
 	"github.com/intelsdi-x/snap/core/ctypes"
+	log "github.com/Sirupsen/logrus"
 )
 
 const (
@@ -80,31 +81,47 @@ type IpmiCollector struct {
 // Source is hostname returned by operating system.
 func (ic *IpmiCollector) CollectMetrics(mts []plugin.PluginMetricType) ([]plugin.PluginMetricType, error) {
 	if !ic.Initialized {
+		log.Debug("Plugin not initialized. Reinitializing...")
 		ic.construct(mts[0].Config().Table()) //reinitialize plugin
 	}
+	log.Debug("Collection started")
 	requestList := make(map[string][]ipmi.IpmiRequest, 0)
 	requestDescList := make(map[string][]ipmi.RequestDescription, 0)
 	responseCache := map[string]map[string]uint16{}
-	for _, host := range ic.Hosts {
-		requestList[host] = make([]ipmi.IpmiRequest, 0)
-		requestDescList[host] = make([]ipmi.RequestDescription, 0)
-		for _, request := range ic.Vendor[host] {
-			requestList[host] = append(requestList[host], request.Request)
-			requestDescList[host] = append(requestDescList[host], request)
+	hosts := make([]string, 0)
+	requests := make([]string, 0)
+	log.Debug("Building IPMI requests for requested metrics")
+	for _, mt := range mts {
+		ns := parseName(mt.Namespace())
+		if contains(hosts, mt.Namespace()[2]) == false {
+			hosts = append(hosts, mt.Namespace()[2])
+			requestDescList[mt.Namespace()[2]] = make([]ipmi.RequestDescription, 0)
+			requestList[mt.Namespace()[2]] = make([]ipmi.IpmiRequest, 0)
+		}
+		for _, rq := range ic.Vendor[mt.Namespace()[2]] {
+			if strings.Contains(ns, rq.MetricsRoot) && contains(requests, rq.MetricsRoot) == false {
+				requests = append(requests, rq.MetricsRoot)
+				requestList[mt.Namespace()[2]] = append(requestList[mt.Namespace()[2]], rq.Request)
+				requestDescList[mt.Namespace()[2]] = append(requestDescList[mt.Namespace()[2]], rq)
+			}
 		}
 	}
+	log.Debug("Requests built")
+
 	response := make(map[string][]ipmi.IpmiResponse, 0)
 
-	for _, host := range ic.Hosts {
+	for _, host := range hosts {
+		log.Debug("Collecting metrics for: ", host)
 		response[host], _ = ic.IpmiLayer.BatchExecRaw(requestList[host], host)
 	}
 
+	log.Debug("Parsing metrics")
 	for nmResponseIdx, hostResponses := range response {
 		cached := map[string]uint16{}
 		for i, resp := range hostResponses {
 			format := requestDescList[nmResponseIdx][i].Format
 			if err := format.Validate(resp); err != nil {
-				return nil, err
+				resp.IsValid = 0
 			}
 			submetrics := format.Parse(resp)
 			for k, v := range submetrics {
@@ -114,23 +131,24 @@ func (ic *IpmiCollector) CollectMetrics(mts []plugin.PluginMetricType) ([]plugin
 			responseCache[nmResponseIdx] = cached
 		}
 	}
+	log.Debug("Metrics parsed")
 
-	results := make([]plugin.PluginMetricType, len(mts))
 	var responseMetrics []plugin.PluginMetricType
 	responseMetrics = make([]plugin.PluginMetricType, 0)
 	t := time.Now()
 
-	for _, host := range ic.Hosts {
-		for i, mt := range mts {
-			ns := mt.Namespace()
-			key := parseName(ns)
-			data := responseCache[host][key]
-			metric := plugin.PluginMetricType{Namespace_: ns, Source_: host,
-				Timestamp_: t, Data_: data}
-			results[i] = metric
-			responseMetrics = append(responseMetrics, metric)
-		}
+	log.Debug("Preparing metrics structures")
+	for _, mt := range mts {
+		ns := mt.Namespace()
+		key := parseName(ns)
+		data := responseCache[mt.Namespace()[2]][key]
+		metric := plugin.PluginMetricType{Namespace_: ns, Source_: mt.Namespace()[2],
+			Timestamp_: t, Data_: data}
+		responseMetrics = append(responseMetrics, metric)
 	}
+	log.Debug("Metrics prepared")
+	log.Debug("Metrics requested: ", len(mts))
+	log.Debug("Metrics returned: ", len(responseMetrics))
 
 	return responseMetrics, nil
 }
@@ -175,6 +193,15 @@ func (ic *IpmiCollector) validateName(namespace []string) error {
 		}
 	}
 	return nil
+}
+
+func contains(slice []string, item string) bool {
+	set := make(map[string]struct{}, len(slice))
+	for _, s := range slice {
+		set[s] = struct{}{}
+	}
+	_, ok := set[item]
+	return ok
 }
 
 func getMode(config map[string]ctypes.ConfigValue) string {
