@@ -117,6 +117,11 @@ Namespace | Data Type | Description (optional)
 /intel/node_manager/temperature/inlet/max | uint16 | Maximal Inlet Temperature
 /intel/node_manager/temperature/inlet/min | uint16 | Minimal Inlet Temperature
 
+### Metric Tags
+Namespace | Tag | Description
+----------|-----|------------
+/intel/node_manager/* | source | Host IP address
+
 ### Examples
 Example task manifest to use Intel Node Manager plugin:
 ```
