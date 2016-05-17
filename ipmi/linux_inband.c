@@ -21,6 +21,7 @@ limitations under the License.
 #include <linux/ipmi.h>
 #include <string.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>

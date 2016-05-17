@@ -30,6 +30,7 @@ import (
 	"github.com/intelsdi-x/snap-plugin-collector-node-manager/ipmi"
 	"github.com/intelsdi-x/snap/control/plugin"
 	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
+	"github.com/intelsdi-x/snap/core"
 	"github.com/intelsdi-x/snap/core/ctypes"
 )
 
@@ -44,12 +45,12 @@ const (
 
 var namespacePrefix = []string{"intel", "node_manager"}
 
-func makeName(metric string) []string {
-	return append(namespacePrefix, strings.Split(metric, "/")...)
+func makeName(metric string) core.Namespace {
+	return core.NewNamespace(append(namespacePrefix, strings.Split(metric, "/")...)...)
 }
 
-func parseName(namespace []string) string {
-	return strings.Join(namespace[len(namespacePrefix):], "/")
+func parseName(namespace core.Namespace) string {
+	return strings.Join(namespace.Strings()[len(namespacePrefix):], "/")
 }
 
 func extendPath(path, ext string) string {
@@ -78,7 +79,7 @@ type IpmiCollector struct {
 // Ipmi request are never duplicated in order to read multiple metrics.
 // Timestamp is set to time when batch processing is complete.
 // Source is hostname returned by operating system.
-func (ic *IpmiCollector) CollectMetrics(mts []plugin.PluginMetricType) ([]plugin.PluginMetricType, error) {
+func (ic *IpmiCollector) CollectMetrics(mts []plugin.MetricType) ([]plugin.MetricType, error) {
 	if !ic.Initialized {
 		ic.construct(mts[0].Config().Table()) //reinitialize plugin
 	}
@@ -115,9 +116,9 @@ func (ic *IpmiCollector) CollectMetrics(mts []plugin.PluginMetricType) ([]plugin
 		}
 	}
 
-	results := make([]plugin.PluginMetricType, len(mts))
-	var responseMetrics []plugin.PluginMetricType
-	responseMetrics = make([]plugin.PluginMetricType, 0)
+	results := make([]plugin.MetricType, len(mts))
+	var responseMetrics []plugin.MetricType
+	responseMetrics = make([]plugin.MetricType, 0)
 	t := time.Now()
 
 	for _, host := range ic.Hosts {
@@ -125,7 +126,7 @@ func (ic *IpmiCollector) CollectMetrics(mts []plugin.PluginMetricType) ([]plugin
 			ns := mt.Namespace()
 			key := parseName(ns)
 			data := responseCache[host][key]
-			metric := plugin.PluginMetricType{Namespace_: ns, Source_: host,
+			metric := plugin.MetricType{Namespace_: ns, Tags_: map[string]string{"source": host},
 				Timestamp_: t, Data_: data}
 			results[i] = metric
 			responseMetrics = append(responseMetrics, metric)
@@ -136,10 +137,10 @@ func (ic *IpmiCollector) CollectMetrics(mts []plugin.PluginMetricType) ([]plugin
 }
 
 // GetMetricTypes Returns list of metrics available for current vendor.
-func (ic *IpmiCollector) GetMetricTypes(cfg plugin.PluginConfigType) ([]plugin.PluginMetricType, error) {
+func (ic *IpmiCollector) GetMetricTypes(cfg plugin.ConfigType) ([]plugin.MetricType, error) {
 	ic.construct(cfg.Table())
-	var mts []plugin.PluginMetricType
-	mts = make([]plugin.PluginMetricType, 0)
+	var mts []plugin.MetricType
+	mts = make([]plugin.MetricType, 0)
 	if ic.IpmiLayer == nil {
 		ic.Initialized = false
 		return mts, fmt.Errorf("Wrong mode configuration")
@@ -148,7 +149,7 @@ func (ic *IpmiCollector) GetMetricTypes(cfg plugin.PluginConfigType) ([]plugin.P
 		for _, req := range ic.Vendor[host] {
 			for _, metric := range req.Format.GetMetrics() {
 				path := extendPath(req.MetricsRoot, metric)
-				mts = append(mts, plugin.PluginMetricType{Namespace_: makeName(path), Source_: host})
+				mts = append(mts, plugin.MetricType{Namespace_: makeName(path), Tags_: map[string]string{"source": host}})
 			}
 		}
 	}
@@ -246,4 +247,3 @@ func (ic *IpmiCollector) construct(cfg map[string]ctypes.ConfigValue) {
 	ic.Initialized = true
 
 }
-
