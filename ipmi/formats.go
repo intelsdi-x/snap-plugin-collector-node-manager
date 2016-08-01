@@ -4,7 +4,7 @@
 http://www.apache.org/licenses/LICENSE-2.0.txt
 
 
-Copyright 2015 Intel Corporation
+Copyright 2015-2016 Intel Corporation
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,28 +22,12 @@ limitations under the License.
 package ipmi
 
 import (
-	"errors"
 	"fmt"
 )
 
 // GenericValidator performs basic response validation. Checks response code ensures response
 // has non-zero length.
 type GenericValidator struct {
-}
-
-// Validate method verifies responses from IPMI device before running parsers
-func (gv *GenericValidator) Validate(response IpmiResponse) error {
-	if response.IsValid == 1 {
-		if len(response.Data) > 0 {
-			if response.Data[0] == 0 {
-				return nil
-			}
-			return fmt.Errorf("Unexpected error code : %d", response.Data[0])
-		}
-		return errors.New("Zero length response")
-	}
-	fmt.Println("Response is not valid")
-	return nil
 }
 
 // ParserCUPS extracts data from CUPS specific response format.
@@ -61,8 +45,8 @@ func (p *ParserCUPS) GetMetrics() []string {
 }
 
 // Parse method returns data in human readable format
-func (p *ParserCUPS) Parse(response IpmiResponse) map[string]uint16 {
-	m := map[string]uint16{}
+func (p *ParserCUPS) Parse(response IpmiResponse) map[string]uint64 {
+	m := map[string]uint64{}
 	// Parsing is based on command Get CUPS Data (65h). Bytes 5:6 contains CPU CUPS dynamic load factor
 	// Bytes 7:8 contains memory CUPS dynamic load factor
 	// Bytes 9:10 contains IO CUPS dynamic load factor
@@ -72,13 +56,15 @@ func (p *ParserCUPS) Parse(response IpmiResponse) map[string]uint16 {
 		"io_bandwith":     8,
 	}
 	for metricName, startIndex := range names {
-		if response.IsValid == 1 {
-			m[metricName] = uint16(response.Data[startIndex]) + uint16(response.Data[startIndex+1])*256
-		} else {
-			m[metricName] = 0xFFFF
-		}
+		m[metricName] = uint64(response.Data[startIndex]) + uint64(response.Data[startIndex+1])*256
 	}
 	return m
+}
+
+// ParserCUPS extracts data from CUPS specific response format.
+// Data contains info about cpu utilization and memory & io bandwidth.
+type ParserCUPSUtilization struct {
+	*GenericValidator
 }
 
 // ParserCUPSIndex extracts CUPS Index from Node Manager
@@ -95,9 +81,10 @@ func (p *ParserCUPSIndex) GetMetrics() []string {
 }
 
 // Parse method returns data in human readable format
-func (p *ParserCUPSIndex) Parse(response IpmiResponse) map[string]uint16 {
-	m := map[string]uint16{}
-	m["index"] = uint16(response.Data[4]) + uint16(response.Data[5])*256
+func (p *ParserCUPSIndex) Parse(response IpmiResponse) map[string]uint64 {
+	m := map[string]uint64{}
+	// Parsing is based on command Get CUPS Data (65h). Bytes 5:6 contains CPU CUPS Index
+	m["index"] = uint64(response.Data[4]) + uint64(response.Data[5])*256
 	return m
 }
 
@@ -112,28 +99,25 @@ var FormatNodeManager = &ParserNodeManager{}
 
 // GetMetrics method returns metric for CUPS parser: "current_value", "min", "max", "avg"
 func (p *ParserNodeManager) GetMetrics() []string {
-	return []string{"", "min", "max", "avg"}
+	return []string{"value", "min", "max", "avg"}
 }
 
 // Parse method returns data in human readable format
-func (p *ParserNodeManager) Parse(response IpmiResponse) map[string]uint16 {
-	m := map[string]uint16{}
+func (p *ParserNodeManager) Parse(response IpmiResponse) map[string]uint64 {
+	m := map[string]uint64{}
 	// Parsing is based on command Get Node Manager Statistics (C8h). Bytes 5:6 contains current value
 	// Bytes 7:8 contains minimum value
 	// Bytes 9:10 contains maximum value
 	// Bytes 11:12 contains average value
 	var names = map[string]uint{
-		"":    4,
-		"min": 6,
-		"max": 8,
-		"avg": 10,
+		"value": 4,
+		"min":   6,
+		"max":   8,
+		"avg":   10,
 	}
 	for metricName, startIndex := range names {
-		if response.IsValid == 1 {
-			m[metricName] = uint16(response.Data[startIndex]) + uint16(response.Data[startIndex+1])*256
-		} else {
-			m[metricName] = 0xFFFF
-		}
+		m[metricName] = uint64(response.Data[startIndex]) + uint64(response.Data[startIndex+1])*256
+
 	}
 	return m
 }
@@ -151,38 +135,24 @@ var FormatTemp = &ParserTemp{}
 // GetMetrics method returns metric for temperature parser: temperature of each cpu (up to 4),
 // temperature of each dimm (up to 64)
 func (p *ParserTemp) GetMetrics() []string {
-	a := []string{"cpu/0", "cpu/1", "cpu/2", "cpu/3"}
-	for i := 0; i < 64; i++ {
-		c := fmt.Sprintf("memory/dimm/%d", i)
-		a = append(a, c)
-	}
+	a := []string{"cpu/*", "dimm/*"}
 	return a
 }
 
 // Parse method returns data in human readable format
-func (p *ParserTemp) Parse(response IpmiResponse) map[string]uint16 {
-	m := map[string]uint16{}
+func (p *ParserTemp) Parse(response IpmiResponse) map[string]uint64 {
+	m := map[string]uint64{}
 	// Parsing is based on Get CPU and Memory Temperature (4Bh). Bytes 5:8 contains temperatures of each socket (up to 4)
-	if response.IsValid == 1 {
-		m["cpu/0"] = uint16(response.Data[4])
-		m["cpu/1"] = uint16(response.Data[5])
-		m["cpu/2"] = uint16(response.Data[6])
-		m["cpu/3"] = uint16(response.Data[7])
-		// Bytes 9:72 contains temperatures of each dimm (up to 64)
-		for i := 8; i < len(response.Data); i++ {
-			a := fmt.Sprintf("memory/dimm/%d", i-8)
-			m[a] = uint16(response.Data[i])
-		}
-	} else {
-		m["cpu/0"] = 0xFFFF
-		m["cpu/1"] = 0xFFFF
-		m["cpu/2"] = 0xFFFF
-		m["cpu/3"] = 0xFFFF
-		for i := 8; i < len(response.Data); i++ {
-			a := fmt.Sprintf("memory/dimm/%d", i-8)
-			m[a] = 0xFFFF
-		}
+	m["cpu/0/value"] = uint64(response.Data[4])
+	m["cpu/1/value"] = uint64(response.Data[5])
+	m["cpu/2/value"] = uint64(response.Data[6])
+	m["cpu/3/value"] = uint64(response.Data[7])
+	// Bytes 9:72 contains temperatures of each dimm (up to 64)
+	for i := 8; i < len(response.Data); i++ {
+		a := fmt.Sprintf("dimm/%d/value", i-8)
+		m[a] = uint64(response.Data[i])
 	}
+
 	return m
 }
 
@@ -199,21 +169,17 @@ var FormatPECI = &ParserPECI{}
 
 // GetMetrics method returns metrics for PECI parser: TJmax, margin_offset
 func (p *ParserPECI) GetMetrics() []string {
-	return []string{"", "margin_offset"}
+	return []string{"value", "margin_offset"}
 }
 
 // Parse method returns data in human readable format
-func (p *ParserPECI) Parse(response IpmiResponse) map[string]uint16 {
-	m := map[string]uint16{}
+func (p *ParserPECI) Parse(response IpmiResponse) map[string]uint64 {
+	m := map[string]uint64{}
 	// Based on Send raw PECI command (40h). Byte 7 returns margin offset
 	// Bytes 8:9 returns TJmax
-	if response.IsValid == 1 {
-		m["margin_offset"] = uint16(response.Data[6])
-		m[""] = uint16(response.Data[7]) + uint16(response.Data[8])*256
-	} else {
-		m["margin_offset"] = 0xFFFF
-		m[""] = 0xFFFF
-	}
+	m["margin_offset"] = uint64(response.Data[6])
+	m["value"] = uint64(response.Data[7]) + uint64(response.Data[8])*256
+
 	return m
 }
 
@@ -227,13 +193,13 @@ var FormatPMBus = &ParserPMBus{}
 
 // GetMetrics returns metrics for PMBus parser: VR[0:5]
 func (p *ParserPMBus) GetMetrics() []string {
-	return []string{"VR0", "VR1", "VR2", "VR3", "VR4", "VR5"}
+	return []string{"VR/*/value"}
 }
 
 // Parse method returns data in human readable format
-func (p *ParserPMBus) Parse(response IpmiResponse) map[string]uint16 {
-	m := map[string]uint16{}
-	var names = map[string]uint{"VR0": 4, "VR1": 6, "VR2": 8, "VR3": 10, "VR4": 12, "VR5": 14}
+func (p *ParserPMBus) Parse(response IpmiResponse) map[string]uint64 {
+	m := map[string]uint64{}
+	var names = map[string]uint{"VR/0/value": 4, "VR/1/value": 6, "VR/2/value": 8, "VR/3/value": 10, "VR/4/value": 12, "VR/5/value": 14}
 	//if not all VRs are present on platform return 0xFFFE
 	if len(response.Data) < 14 {
 		for metricName := range names {
@@ -243,11 +209,8 @@ func (p *ParserPMBus) Parse(response IpmiResponse) map[string]uint16 {
 	}
 	// Based on Send Raw PMBus Command (D9h). Bytes 9:N contains data received from PSU
 	for metricName, startIndex := range names {
-		if response.IsValid == 1 {
-			m[metricName] = uint16(response.Data[startIndex]) + uint16(response.Data[startIndex+1])*256
-		} else {
-			m[metricName] = 0xFFFF
-		}
+		m[metricName] = uint64(response.Data[startIndex]) + uint64(response.Data[startIndex+1])*256
+
 	}
 	return m
 }
@@ -266,10 +229,10 @@ func (p *ParserPSU) GetMetrics() []string {
 }
 
 // Parse method returns data in human readable format
-func (p *ParserPSU) Parse(response IpmiResponse) map[string]uint16 {
-	m := map[string]uint16{}
-	m["0"] = uint16(response.Data[4]) + uint16(response.Data[5])*256
-	m["1"] = uint16(response.Data[6]) + uint16(response.Data[7])*256
+func (p *ParserPSU) Parse(response IpmiResponse) map[string]uint64 {
+	m := map[string]uint64{}
+	m["0"] = uint64(response.Data[4]) + uint64(response.Data[5])*256
+	m["1"] = uint64(response.Data[6]) + uint64(response.Data[7])*256
 	return m
 }
 
@@ -283,14 +246,14 @@ var FormatSR = &ParserSR{}
 
 // GetMetrics returns metrics for sensor reading parser: current value
 func (p *ParserSR) GetMetrics() []string {
-	return []string{""}
+	return []string{"value"}
 }
 
 // Parse method returns data in human readable format
-func (p *ParserSR) Parse(response IpmiResponse) map[string]uint16 {
-	m := map[string]uint16{}
+func (p *ParserSR) Parse(response IpmiResponse) map[string]uint64 {
+	m := map[string]uint64{}
 	// Based on Get Sensor Reading (2Dh)
-	m[""] = uint16(response.Data[1])
+	m["value"] = uint64(response.Data[1])
 	return m
 }
 
@@ -308,8 +271,28 @@ func (p *ParserPolicy) GetMetrics() []string {
 }
 
 // Parse method returns data in human readable format
-func (p *ParserPolicy) Parse(response IpmiResponse) map[string]uint16 {
-	m := map[string]uint16{}
-	m["power_limit"] = uint16(response.Data[13]) + uint16(response.Data[14])*256
+func (p *ParserPolicy) Parse(response IpmiResponse) map[string]uint64 {
+	m := map[string]uint64{}
+	m["power_limit"] = uint64(response.Data[13]) + uint64(response.Data[14])*256
+	return m
+}
+
+// ParserPolicy extracts sensor value from response to Get CUPS.
+type ParserGetCups struct {
+	*GenericValidator
+}
+
+// Instance of Cups parser
+var FormatGetCups = &ParserGetCups{}
+
+// GetMetrics returns metrics for cups
+func (p *ParserGetCups) GetMetrics() []string {
+	return []string{"value"}
+}
+
+// Parse method returns data in human readable format
+func (p *ParserGetCups) Parse(response IpmiResponse) map[string]uint64 {
+	m := map[string]uint64{}
+	m["value"] = uint64(response.Data[1]) * 100 / 255
 	return m
 }

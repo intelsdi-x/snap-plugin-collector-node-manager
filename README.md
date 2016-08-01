@@ -52,12 +52,12 @@ This builds the plugin in `/build/rootfs`
 Those modules provides specific IPMI device which can collect data from NM
 
 There are currently 6 configuration options:
- - mode - defines mode of plugin work, possible values: legacy_inband, legacy_inband_openipmi, oob
+ - mode - defines mode of plugin work, possible values: legacy_inband, legacy_oob
  - channel - defines communication channel address (default: "0x00")
  - slave - defines target address (default: "0x00")
  - user - for OOB mode only, user for authentication to remote host
  - password - for OOB mode only, password for authentication to remote host
- - host - for OOB mode only, IP of host which will be monitored OOB
+ - hosts - for OOB mode only, path to file with IPs of host which will be monitored OOB
 
 Sample configuration of node manager plugin:
 ```
@@ -83,39 +83,39 @@ This plugin has the ability to gather the following metrics:
 
 Namespace | Data Type | Description (optional)
 ----------|-----------|-----------------------
-/intel/node_manager/airflow | uint16 | Current Volumetric Airflow
-/intel/node_manager/airflow/avg | uint16 | Average Volumetric Airflow 
-/intel/node_manager/airflow/max | uint16 | Maximal Volumetric Airflow 
-/intel/node_manager/airflow/min | uint16 | Minimal Volumetric Airflow 
-/intel/node_manager/cups/cpu_cstate | uint16 | CUPS CPU Bandwidth
-/intel/node_manager/cups/io_bandwith | uint16 | CUPS I/O Bandwidth
-/intel/node_manager/cups/memory_bandwith | uint16 | CUPS Memory Bandwidth
-/intel/node_manager/power/cpu | uint16 | Current CPU power consumption
-/intel/node_manager/power/cpu/avg | uint16 | Average CPU power consumption
-/intel/node_manager/power/cpu/max | uint16 | Maximal CPU power consumption
-/intel/node_manager/power/cpu/min | uint16 | Minimal CPU power consumption
-/intel/node_manager/power/policy/power_limit | uint16 | Power policy
-/intel/node_manager/margin/cpu/tj  | uint16 | Margin-to-throttle functional  (CPU)
-/intel/node_manager/margin/cpu/tj/margin_offset | uint16 | Margin-to-spec reliability (CPU)
-/intel/node_manager/power/memory | uint16 | Current Memory power consumption
-/intel/node_manager/power/memory/avg | uint16 | Average Memory power consumption
-/intel/node_manager/power/memory/max | uint16 | Maximal Memory power consumption
-/intel/node_manager/power/memory/min | uint16 | Minimal Memory power consumption
-/intel/node_manager/power/system | uint16 | Current Platform power consumption
-/intel/node_manager/power/system/avg | uint16 | Average Platform power consumption
-/intel/node_manager/power/system/max | uint16 | Maximal Platform power consumption
-/intel/node_manager/power/system/min | uint16 | Minimal Platform power consumption
-/intel/node_manager/temperature/cpu/cpu/<cpu_id> | uint16 | Current CPU temperature
-/intel/node_manager/temperature/pmbus/VR/<VR_id> | uint16 | Current VR's temperature
-/intel/node_manager/temperature/memory/dimm/<dimm_id> | uint16 | Current Memory dimms temperature
-/intel/node_manager/temperature/outlet | uint16 | Current Outlet (exhaust air) temperature
-/intel/node_manager/temperature/outlet/avg | uint16 | Average Outlet (exhaust air) temperature
-/intel/node_manager/temperature/outlet/max | uint16 | Maximal Outlet (exhaust air) temperature
-/intel/node_manager/temperature/outlet/min | uint16 | Minimal Outlet (exhaust air) temperature
-/intel/node_manager/temperature/inlet | uint16 | Current Inlet Temperature
-/intel/node_manager/temperature/inlet/avg | uint16 | Average Inlet Temperature
-/intel/node_manager/temperature/inlet/max | uint16 | Maximal Inlet Temperature
-/intel/node_manager/temperature/inlet/min | uint16 | Minimal Inlet Temperature
+/intel/node_manager/host_id/airflow | uint64 | Current Volumetric Airflow
+/intel/node_manager/host_id/airflow/avg | uint64 | Average Volumetric Airflow 
+/intel/node_manager/host_id/airflow/max | uint64 | Maximal Volumetric Airflow 
+/intel/node_manager/host_id/airflow/min | uint64 | Minimal Volumetric Airflow 
+/intel/node_manager/host_id/cups/cpu_cstate | uint64 | CUPS CPU Bandwidth
+/intel/node_manager/host_id/cups/io_bandwith | uint64 | CUPS I/O Bandwidth
+/intel/node_manager/host_id/cups/memory_bandwith | uint64 | CUPS Memory Bandwidth
+/intel/node_manager/host_id/power/cpu | uint64 | Current CPU power consumption
+/intel/node_manager/host_id/power/cpu/avg | uint64 | Average CPU power consumption
+/intel/node_manager/host_id/power/cpu/max | uint64 | Maximal CPU power consumption
+/intel/node_manager/host_id/power/cpu/min | uint64 | Minimal CPU power consumption
+/intel/node_manager/host_id/power/policy/power_limit | uint64 | Power policy
+/intel/node_manager/host_id/margin/cpu/tj  | uint64 | Margin-to-throttle functional  (CPU)
+/intel/node_manager/host_id/margin/cpu/tj/margin_offset | uint64 | Margin-to-spec reliability (CPU)
+/intel/node_manager/host_id/power/memory | uint64 | Current Memory power consumption
+/intel/node_manager/host_id/power/memory/avg | uint64 | Average Memory power consumption
+/intel/node_manager/host_id/power/memory/max | uint64 | Maximal Memory power consumption
+/intel/node_manager/host_id/power/memory/min | uint64 | Minimal Memory power consumption
+/intel/node_manager/host_id/power/system | uint64 | Current Platform power consumption
+/intel/node_manager/host_id/power/system/avg | uint64 | Average Platform power consumption
+/intel/node_manager/host_id/power/system/max | uint64 | Maximal Platform power consumption
+/intel/node_manager/host_id/power/system/min | uint64 | Minimal Platform power consumption
+/intel/node_manager/host_id/temperature/cpu/<cpu_id> | uint64 | Current CPU temperature
+/intel/node_manager/host_id/temperature/pmbus/VR/<VR_id> | uint64 | Current VR's temperature
+/intel/node_manager/host_id/temperature/dimm/<dimm_id> | uint64 | Current Memory dimms temperature
+/intel/node_manager/host_id/temperature/outlet | uint64 | Current Outlet (exhaust air) temperature
+/intel/node_manager/host_id/temperature/outlet/avg | uint64 | Average Outlet (exhaust air) temperature
+/intel/node_manager/host_id/temperature/outlet/max | uint64 | Maximal Outlet (exhaust air) temperature
+/intel/node_manager/host_id/temperature/outlet/min | uint64 | Minimal Outlet (exhaust air) temperature
+/intel/node_manager/host_id/temperature/inlet | uint64 | Current Inlet Temperature
+/intel/node_manager/host_id/temperature/inlet/avg | uint64 | Average Inlet Temperature
+/intel/node_manager/host_id/temperature/inlet/max | uint64 | Maximal Inlet Temperature
+/intel/node_manager/host_id/temperature/inlet/min | uint64 | Minimal Inlet Temperature
 
 ### Metric Tags
 Namespace | Tag | Description
@@ -134,65 +134,23 @@ Example task manifest to use Intel Node Manager plugin:
     "workflow": {
         "collect": {
             "metrics": {
-                "/intel/node_manager/airflow": {},
-                "/intel/node_manager/airflow/avg": {},
-                "/intel/node_manager/airflow/max": {},
-                "/intel/node_manager/airflow/min": {},
-                "/intel/node_manager/cups/cpu_cstate": {},
-                "/intel/node_manager/cups/io_bandwith": {},
-                "/intel/node_manager/cups/memory_bandwith": {},
-                "/intel/node_manager/margin/cpu/tj": {},
-                "/intel/node_manager/margin/cpu/tj/margin_offset": {},
-                "/intel/node_manager/power/cpu": {},
-                "/intel/node_manager/power/cpu/avg": {},
-                "/intel/node_manager/power/cpu/max": {},
-                "/intel/node_manager/power/cpu/min": {},
-                "/intel/node_manager/power/memory": {},
-                "/intel/node_manager/power/memory/avg": {},
-                "/intel/node_manager/power/memory/max": {},
-                "/intel/node_manager/power/memory/min": {},
-                "/intel/node_manager/power/system": {},
-                "/intel/node_manager/power/system/avg": {},
-                "/intel/node_manager/power/system/max": {},
-                "/intel/node_manager/power/system/min": {},
-                "/intel/node_manager/temperature/cpu/cpu/0": {},
-                "/intel/node_manager/temperature/cpu/cpu/1": {},
-                "/intel/node_manager/temperature/memory/dimm/0": {},
-                "/intel/node_manager/temperature/memory/dimm/1": {},
-                "/intel/node_manager/temperature/memory/dimm/10": {},
-                "/intel/node_manager/temperature/memory/dimm/11": {},
-                "/intel/node_manager/temperature/memory/dimm/12": {},
-                "/intel/node_manager/temperature/memory/dimm/13": {},
-                "/intel/node_manager/temperature/memory/dimm/14": {},
-                "/intel/node_manager/temperature/memory/dimm/15": {},
-                "/intel/node_manager/temperature/memory/dimm/16": {},
-                "/intel/node_manager/temperature/memory/dimm/17": {},
-                "/intel/node_manager/temperature/memory/dimm/18": {},
-                "/intel/node_manager/temperature/memory/dimm/19": {},
-                "/intel/node_manager/temperature/memory/dimm/2": {},
-                "/intel/node_manager/temperature/memory/dimm/20": {},
-                "/intel/node_manager/temperature/memory/dimm/21": {},
-                "/intel/node_manager/temperature/memory/dimm/22": {},
-                "/intel/node_manager/temperature/memory/dimm/23": {},
-                "/intel/node_manager/temperature/memory/dimm/24": {},
-                "/intel/node_manager/temperature/memory/dimm/25": {},
-                "/intel/node_manager/temperature/memory/dimm/26": {},
-                "/intel/node_manager/temperature/memory/dimm/27": {},
-                "/intel/node_manager/temperature/memory/dimm/28": {},
-                "/intel/node_manager/temperature/memory/dimm/29": {},
-                "/intel/node_manager/temperature/memory/dimm/3": {},
-                "/intel/node_manager/temperature/memory/dimm/30": {},
-                "/intel/node_manager/temperature/memory/dimm/31": {},
-                "/intel/node_manager/temperature/memory/dimm/4": {},
-                "/intel/node_manager/temperature/memory/dimm/5": {},
-                "/intel/node_manager/temperature/memory/dimm/6": {},
-                "/intel/node_manager/temperature/memory/dimm/7": {},
-                "/intel/node_manager/temperature/memory/dimm/8": {},
-                "/intel/node_manager/temperature/memory/dimm/9": {},
-                "/intel/node_manager/temperature/outlet": {},
-                "/intel/node_manager/temperature/outlet/avg": {},
-                "/intel/node_manager/temperature/outlet/max": {},
-                "/intel/node_manager/temperature/outlet/min": {}
+                "/intel/node_manager/*/airflow": {},
+                "/intel/node_manager/*/cups/cpu_cstate": {},
+                "/intel/node_manager/*/cups/io_bandwith": {},
+                "/intel/node_manager/*/cups/memory_bandwith": {},
+                "/intel/node_manager/*/margin/cpu/tj": {},
+                "/intel/node_manager/*/margin/cpu/tj/margin_offset": {},
+                "/intel/node_manager/*/power/cpu": {},
+                "/intel/node_manager/*/power/memory": {},
+                "/intel/node_manager/*/power/memory/avg": {},
+                "/intel/node_manager/*/power/memory/max": {},
+                "/intel/node_manager/*/power/memory/min": {},
+                "/intel/node_manager/*/power/system": {},
+                "/intel/node_manager/*/power/system/avg": {},
+                "/intel/node_manager/*/power/system/max": {},
+                "/intel/node_manager/*/power/system/min": {},
+                "/intel/node_manager/*/temperature/cpu/*": {},
+                "/intel/node_manager/*/temperature/outlet": {},
             },
             "config": {
             },

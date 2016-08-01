@@ -4,7 +4,7 @@
 http://www.apache.org/licenses/LICENSE-2.0.txt
 
 
-Copyright 2015 Intel Corporation
+Copyright 2015-2016 Intel Corporation
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,42 +22,41 @@ limitations under the License.
 package nodeManagerPlugin
 
 import (
-	"fmt"
 	"os"
 	"strings"
 	"time"
 
+	"bufio"
 	"github.com/intelsdi-x/snap-plugin-collector-node-manager/ipmi"
+	"github.com/intelsdi-x/snap-plugin-utilities/config"
 	"github.com/intelsdi-x/snap/control/plugin"
 	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
 	"github.com/intelsdi-x/snap/core"
-	"github.com/intelsdi-x/snap/core/ctypes"
+	"sync"
+	"fmt"
+	log "github.com/Sirupsen/logrus"
 )
 
 const (
 	//Name is name of plugin
 	Name = "node-manager"
 	//Version of plugin
-	Version = 7
+	Version = 8
 	//Type of plugin
 	Type = plugin.CollectorPluginType
+
+	pluginVendor = "intel"
+	pluginName   = "node_manager"
 )
 
-var namespacePrefix = []string{"intel", "node_manager"}
-
-func makeName(metric string) core.Namespace {
-	return core.NewNamespace(append(namespacePrefix, strings.Split(metric, "/")...)...)
-}
-
-func parseName(namespace core.Namespace) string {
-	return strings.Join(namespace.Strings()[len(namespacePrefix):], "/")
-}
-
-func extendPath(path, ext string) string {
-	if ext == "" {
-		return path
+func extendPath(path []string) string {
+	fullPath := string("")
+	if len(path) > 0 {
+		for _, ext := range path {
+			fullPath += "/" + ext
+		}
 	}
-	return path + "/" + ext
+	return fullPath
 }
 
 // IpmiCollector Plugin class.
@@ -72,88 +71,121 @@ type IpmiCollector struct {
 	Hosts       []string
 	Mode        string
 	Initialized bool
-	NSim        int
 }
 
-// CollectMetrics Performs metric collection.
-// Ipmi request are never duplicated in order to read multiple metrics.
-// Timestamp is set to time when batch processing is complete.
-// Source is hostname returned by operating system.
+func validateResponse(response []byte) bool {
+	if len(response) > 0 {
+		if response[0] == 0x00 && response[1] == 0x57 && response[2] == 0x01 {
+			return true
+		} else if len(response) == 4 && response[0] == 0x00 && response[2] == 0xC0 { //validate Sensor reading
+			return true
+		}
+	}
+	log.Debug("Response Invalid")
+	return false
+}
+
 func (ic *IpmiCollector) CollectMetrics(mts []plugin.MetricType) ([]plugin.MetricType, error) {
 	if !ic.Initialized {
-		ic.construct(mts[0].Config().Table()) //reinitialize plugin
+		log.Debug("Plugin not initialized!")
+		ic.construct(mts[0]) //reinitialize plugin
 	}
-	requestList := make(map[string][]ipmi.IpmiRequest, 0)
-	requestDescList := make(map[string][]ipmi.RequestDescription, 0)
-	responseCache := map[string]map[string]uint16{}
+	var wg sync.WaitGroup
+	c := make(chan ipmi.IpmiResponse, len(ic.Hosts)*len(ipmi.GenericVendor))
+	wg.Add(len(ic.Hosts) * len(ipmi.GenericVendor))
+
+	log.Debug("Collection started")
 	for _, host := range ic.Hosts {
-		requestList[host] = make([]ipmi.IpmiRequest, 0)
-		requestDescList[host] = make([]ipmi.RequestDescription, 0)
-		for _, request := range ic.Vendor[host] {
-			requestList[host] = append(requestList[host], request.Request)
-			requestDescList[host] = append(requestDescList[host], request)
+		for i, req := range ipmi.GenericVendor {
+			go func(host string, i int, req ipmi.RequestDescription) {
+				defer wg.Done()
+				c <- ic.IpmiLayer.RunParallelRequests(req.Request, host, i)
+			}(host, i, req)
 		}
 	}
-	response := make(map[string][]ipmi.IpmiResponse, 0)
-
-	for _, host := range ic.Hosts {
-		response[host], _ = ic.IpmiLayer.BatchExecRaw(requestList[host], host)
+	wg.Wait()
+	close(c)
+	log.Debug("Collection done")
+	values := make([]ipmi.IpmiResponse, 0)
+	for a := range c {
+		values = append(values, a)
 	}
-
-	for nmResponseIdx, hostResponses := range response {
-		cached := map[string]uint16{}
-		for i, resp := range hostResponses {
-			format := requestDescList[nmResponseIdx][i].Format
-			if err := format.Validate(resp); err != nil {
-				return nil, err
-			}
-			submetrics := format.Parse(resp)
-			for k, v := range submetrics {
-				path := extendPath(requestDescList[nmResponseIdx][i].MetricsRoot, k)
-				cached[path] = v
-			}
-			responseCache[nmResponseIdx] = cached
-		}
-	}
-
-	results := make([]plugin.MetricType, len(mts))
-	var responseMetrics []plugin.MetricType
-	responseMetrics = make([]plugin.MetricType, 0)
 	t := time.Now()
-
-	for _, host := range ic.Hosts {
-		for i, mt := range mts {
-			ns := mt.Namespace()
-			key := parseName(ns)
-			data := responseCache[host][key]
-			metric := plugin.MetricType{Namespace_: ns, Tags_: map[string]string{"source": host},
-				Timestamp_: t, Data_: data}
-			results[i] = metric
-			responseMetrics = append(responseMetrics, metric)
+	responseMetrics := make([]plugin.MetricType, 0)
+	responseCache := make(map[string]uint64)
+	log.Debug("Processing started")
+	for _, value := range values {
+		if len(value.Data) > 0 {
+			if validateResponse(value.Data) {
+				format := ipmi.GenericVendor[value.Index].Format
+				metricRoot := ipmi.GenericVendor[value.Index].MetricsRoot
+				submetrics := format.Parse(value)
+				for k, v := range submetrics {
+					path := extendPath([]string{value.Source, metricRoot, k})
+					responseCache[path] = v
+				}
+			}
 		}
 	}
+	var metric plugin.MetricType
+
+	for key, resp := range responseCache {
+		args := []string{pluginVendor, pluginName}
+		args = append(args, strings.Split(key, "/")[1:]...)
+		source := args[2]
+		ns := core.NewNamespace(args[0:2]...).
+			AddDynamicElement("host_id", "Host ID").
+			AddStaticElements(args[3:]...)
+		ns[2].Value = fmt.Sprintf("%s", source)
+		tags := map[string]string{"source": source}
+		metric = plugin.MetricType{
+			Namespace_: ns,
+			Data_:      resp,
+			Timestamp_: t,
+			Tags_:      tags,
+		}
+		responseMetrics = append(responseMetrics, metric)
+	}
+	log.Debug("Processing done")
 
 	return responseMetrics, nil
 }
 
 // GetMetricTypes Returns list of metrics available for current vendor.
 func (ic *IpmiCollector) GetMetricTypes(cfg plugin.ConfigType) ([]plugin.MetricType, error) {
-	ic.construct(cfg.Table())
 	var mts []plugin.MetricType
 	mts = make([]plugin.MetricType, 0)
-	if ic.IpmiLayer == nil {
-		ic.Initialized = false
-		return mts, fmt.Errorf("Wrong mode configuration")
-	}
-	for _, host := range ic.Hosts {
-		for _, req := range ic.Vendor[host] {
-			for _, metric := range req.Format.GetMetrics() {
-				path := extendPath(req.MetricsRoot, metric)
-				mts = append(mts, plugin.MetricType{Namespace_: makeName(path), Tags_: map[string]string{"source": host}})
+	var namespace []core.NamespaceElement
+
+	for _, req := range ipmi.GenericVendor {
+		for _, metric := range req.Format.GetMetrics() {
+			if strings.Contains(metric, "*") {
+				if strings.Contains(metric, "cpu") {
+					ns := strings.Split(req.MetricsRoot, "/")
+					ns = append(ns, strings.Split(metric, "/")[0])
+					namespace = core.NewNamespace(pluginVendor, pluginName).
+						AddDynamicElement("host_id", "Host ID").
+						AddStaticElements(ns...).
+						AddDynamicElement("cpu_id", "CPU ID").
+						AddStaticElement("value")
+				} else if strings.Contains(metric, "dimm") {
+					ns := strings.Split(req.MetricsRoot, "/")
+					ns = append(ns, strings.Split(metric, "/")[0])
+					namespace = core.NewNamespace(pluginVendor, pluginName).
+						AddDynamicElement("host_id", "Host ID").
+						AddStaticElements(ns...).
+						AddDynamicElement("dimm_id", "DIMM ID").
+						AddStaticElement("value")
+				}
+			} else {
+				namespace = core.NewNamespace(pluginVendor, pluginName).
+					AddDynamicElement("host_id", "Host ID").
+					AddStaticElements(strings.Split(req.MetricsRoot, "/")...).
+					AddStaticElement(metric)
 			}
+			mts = append(mts, plugin.MetricType{Namespace_: namespace})
 		}
 	}
-	ic.Initialized = true
 	return mts, nil
 }
 
@@ -169,81 +201,86 @@ func New() *IpmiCollector {
 	return collector
 }
 
-func (ic *IpmiCollector) validateName(namespace []string) error {
-	for i, e := range namespacePrefix {
-		if namespace[i] != e {
-			return fmt.Errorf("Wrong namespace prefix in namespace %v", namespace)
-		}
+func getHosts(config string) []string {
+	if config == "" {
+		return nil
 	}
-	return nil
+	file, err := os.Open(config)
+	if err != nil {
+		log.Debug("Unable to open file with list of hosts")
+		return nil
+	}
+	defer file.Close()
+	var hostList []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		hostList = append(hostList, scanner.Text())
+	}
+	return hostList
 }
 
-func getMode(config map[string]ctypes.ConfigValue) string {
-	if mode, ok := config["mode"]; ok {
-		return mode.(ctypes.ConfigValueStr).Value
-	}
-	return ""
-}
-
-func getChannel(config map[string]ctypes.ConfigValue) string {
-	if channel, ok := config["channel"]; ok {
-		return channel.(ctypes.ConfigValueStr).Value
-	}
-	return "0x00" //Default channel addr
-}
-
-func getSlave(config map[string]ctypes.ConfigValue) string {
-	if slave, ok := config["slave"]; ok {
-		return slave.(ctypes.ConfigValueStr).Value
-	}
-	return "0x00" //Default slave addr
-}
-
-func getPass(config map[string]ctypes.ConfigValue) string {
-	if pass, ok := config["password"]; ok {
-		return pass.(ctypes.ConfigValueStr).Value
-	}
-	return ""
-}
-
-func getUser(config map[string]ctypes.ConfigValue) string {
-	if user, ok := config["user"]; ok {
-		return user.(ctypes.ConfigValueStr).Value
-	}
-	return ""
-}
-
-func getHost(config map[string]ctypes.ConfigValue) string {
-	if host, ok := config["host"]; ok {
-		return host.(ctypes.ConfigValueStr).Value
-	}
-	return ""
-}
-
-func (ic *IpmiCollector) construct(cfg map[string]ctypes.ConfigValue) {
+func (ic *IpmiCollector) construct(mts plugin.MetricType) {
 	var hostList []string
 	var ipmiLayer ipmi.IpmiAL
-	ic.Mode = getMode(cfg)
-	channel := getChannel(cfg)
-	slave := getSlave(cfg)
-	user := getUser(cfg)
-	pass := getPass(cfg)
+	ic.Initialized = false
+	mode, err := config.GetConfigItem(mts, "mode")
+	if err != nil {
+		log.Debug("Invalid configuration mode")
+		log.Debug(mode)
+		log.Debug("Unable to initialize plugin")
+		return
+	}
+	ic.Mode = mode.(string)
 	host, _ := os.Hostname()
 	if ic.Mode == "legacy_inband" {
-		ipmiLayer = &ipmi.LinuxInBandIpmitool{Device: "ipmitool", Channel: channel, Slave: slave}
+		configuration, err := config.GetConfigItems(mts, "channel", "slave")
+		if err != nil {
+			log.Debug("Invalid configuration for legacy_inband")
+			log.Debug(configuration)
+			log.Debug("Unable to initialize plugin")
+			return
+		}
+		ipmiLayer = &ipmi.LinuxInBandIpmitool{
+			Device:  "ipmitool",
+			Channel: configuration["channel"].(string),
+			Slave:   configuration["slave"].(string),
+		}
 		hostList = []string{host}
-	} else if ic.Mode == "oob" {
-		ipmiLayer = &ipmi.LinuxOutOfBand{Device: "ipmitool", Channel: channel, Slave: slave, User: user, Pass: pass}
-		hostList = []string{getHost(cfg)}
-	} else if ic.Mode == "legacy_inband_openipmi" {
-		ipmiLayer = &ipmi.LinuxInband{}
+	} else if ic.Mode == "legacy_oob" {
+		configuration, err := config.GetConfigItems(mts, "channel", "slave", "user", "password")
+		if err != nil {
+			log.Debug("Invalid configuration for legacy_oob")
+			log.Debug(configuration)
+			log.Debug("Unable to initialize plugin")
+			return
+		}
+		ipmiLayer = &ipmi.LinuxOutOfBand{
+			Device:  "ipmitool",
+			Channel: configuration["channel"].(string),
+			Slave:   configuration["slave"].(string),
+			User:    configuration["user"].(string),
+			Pass:    configuration["password"].(string),
+		}
+		path, err := config.GetConfigItem(mts, "hosts")
+		if err != nil {
+			log.Debug("Unable to get hosts list")
+			log.Debug(path)
+			log.Debug("Unable to initialize plugin")
+			return
+		}
+		hostList = getHosts(path.(string))
+		if hostList == nil {
+			log.Debug("Host list empty")
+			return 
+		}
 	} else {
+		log.Debug("Invalid mode configuration")
+		log.Debug("Unable to initialize plugin")
 		return
 	}
 
 	ic.IpmiLayer = ipmiLayer
 	ic.Hosts = hostList
-	ic.Vendor = ipmiLayer.GetPlatformCapabilities(ipmi.GenericVendor, hostList)
 	ic.Initialized = true
 
 }
