@@ -1,0 +1,12 @@
+.travis.yml:
+  deploy:
+    access_key_id: AKIAINMB43VSSPFZISAA
+    secret_access_key:
+      secure: ZuSvtE+s/5iXFAuSPEy0VpP/fOGrV+3jxPkYs6l3+1fYxolTOilRbGPXjNGYvcGBlM6Yti6CCq980o8+zAPQt0ZxHwo1eeBBXGQGRIhfE5+w2MZShxLqj0XYDf3DRIUYMUq4WODhgRgUwPP0+W7Mc3lGkewyCV48wKH+Ayp4yQZwJP1TLtP7Tks9/vr/UPG/IjOJ898De5O1hwRJ/763i0Fgj34OdFmHJkBuSKrMTCS3H9rwq0WHZR0sdHgndnqV4Zw8bhg/XSetNZlYjfhWs1K77YHVV/XPOwusW4H4+HmkIx4VCmMF7QbjjrG/+rrbmusGOBIizNyWFRukN4t8an6jlHmubcDE//+c/IT5dtADgLbFz+CBHP22G4hLE+CfPxlsJ/m2zvac19zRimIWF+PBt0f5kdzvKKbu0NMQjbut+E61PZI2/csfi3QfxFDw4svvv79vwdoEScB5pFpOCOtAIaFz5+foBJFdScYCJmtnU57w9hJP/ffs00pgpgpOmCN/iMxo5gW/RtBq1Ev3uN1uFDESq43htas142huqT9DLrdpF3T4ljeARzlOLxYqJCQ38KP6JSk9XdsspAWgpxiS0EaFHky1ozndVUjyTqhuy4AKyOOs6Tb1vZO/lnS0Qvp+ebq+ibpsHHmG6C5oyfNOLYN53WZV4ed/Vds/m7Y=
+    api_key:
+      secure: d9AACtEUmKpeNlKxqNCIxJe2ycOyFnJUMu9CZ9raKywOgBEy7XfZ2WoaMEpuT9+mhfgstZe5Unj67RVjL+VkwW6AjaVkHTtBK2cQKjEmUQxLonrRsQnDwc4kx1u7SeHfrz3yrJWSvpsbyXH+UbS0rHrgU1Jksb//JVlP67ryrw6BiUaicYvhJeO4gb5haJX2BtTt/ksF9AiuUaKFK2qN6W0L+rWv4pQKZx/atsw+/mdjU3jagOgZu4tT0l+qo02urbYDIUYaU/qMB7Ug/DuCvTgwtaU6O1olGwkVZ/3aUgsuOIEyvof/bu+4AAaBJnIHU/wubPrfrTnIYYmS7b23teZ4p3HFhA3iUvLpgPETWHcUq/NrTkC2uEJOzq6RpLhm7WtLPxL9sZLv/pZGOv8vICwwiwq4H6WpCueOpB522f4ZauoTg+7CC52BhT4ESI/oNCv2Mv5wUQoncburfXS/91K3SIHRFllFv/2pdL60x2nKW08UdcsojscJlGCt3R9BAtFwaKRfuzmB6mouKcmIL2xlgwpw45q+XOuytcDjuuhsXFXtk3mJRVYXhOtVuFf7Jx0ipb1egqOZ74P3RG8nb7js6nVQNSqZaPXVx92KJlHDydFlRhJUhBdvrlPr24MpwOl/ujVFoxlFFgGtx8Hv7QaSC0jssFx5GJrOxi/Y1w0=
+scripts/build.sh:
+  cgo_enabled: true
+scripts/deps.sh:
+  packages:
+    - github.com/smartystreets/goconvey # NOTE: this should be moved to godep/glide
