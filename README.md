@@ -67,8 +67,8 @@ Sample configuration of node manager plugin:
             "node-manager": {
                 "all": {
                     "mode": "legacy_inband",
-                    "channel": "0x00",
-                    "slave": "0x00"
+                    "channel": "6",
+                    "slave": "0x2c"
                 }
             }
         }
