@@ -62,13 +62,15 @@ There are currently 6 configuration options:
 Sample configuration of node manager plugin:
 ```
 {
-    "plugins": {
-        "collector": {
-            "node-manager": {
-                "all": {
-                    "mode": "legacy_inband",
-                    "channel": "6",
-                    "slave": "0x2c"
+    "control": {
+        "plugins": {
+            "collector": {
+                "node-manager": {
+                    "all": {
+                        "mode": "legacy_inband",
+                        "channel": "6",
+                        "slave": "0x2c"
+                    }
                 }
             }
         }
