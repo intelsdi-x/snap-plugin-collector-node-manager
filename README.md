@@ -1,3 +1,7 @@
+# Plugin status
+
+This plugin is no longer being actively maintained by intel. Work has instead shifted to the [intel-dcm-platform](https://github.com/intelsdi-x/snap-plugin-collector-intel-dcm-platform) plugin.
+
 # snap collector plugin - Intel Node Manager
 
  Plugin to collect data from Intel's Node Manager. Which is presenting low level metrics like power consumption, cpu temperature, etc.
@@ -10,7 +14,6 @@
 2. [Documentation](#documentation)
   * [Collected Metrics](#collected-metrics)
   * [Examples](#examples)
-  * [Roadmap](#roadmap)
 3. [Community Support](#community-support)
 4. [Contributing](#contributing)
 5. [License](#license)
@@ -214,10 +217,6 @@ Example task manifest to use Intel Node Manager plugin:
 }
 ```
 
-
-### Roadmap
-As we launch this plugin, we have a few items in mind for the next release:
-- SDR readings support
 
 ## Community Support
 This repository is one of **many** plugins in **Snap**, a powerful telemetry framework. See the full project at http://github.com/intelsdi-x/snap To reach out to other users, head to the [main framework](https://github.com/intelsdi-x/snap#community-support)
