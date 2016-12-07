@@ -4,7 +4,7 @@
 http://www.apache.org/licenses/LICENSE-2.0.txt
 
 
-Copyright 2015 Intel Corporation
+Copyright 2015-2016 Intel Corporation
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,21 +23,21 @@ package ipmi
 
 // IpmiAL Abstract type for ipmi backend.
 type IpmiAL interface {
-	BatchExecRaw(requests []IpmiRequest, host string) ([]IpmiResponse, error)
-	GetPlatformCapabilities(requests []RequestDescription, host []string) map[string][]RequestDescription
+	RunParallelRequests(request IpmiRequest, host string, index int) IpmiResponse
 }
 
 // IpmiRequest Defines request parameter passed to abstraction layer.
 type IpmiRequest struct {
 	Data    []byte
-	Channel int16
-	Slave   uint8
+	Channel uint16
+	Slave   uint16
 }
 
 // IpmiResponse Defines response data.
 type IpmiResponse struct {
-	Data    []byte
-	IsValid uint
+	Data   []byte
+	Source string
+	Index  int
 }
 
 // RequestDescription Vendor exposed structure. Defines request content and response format.
@@ -57,6 +57,5 @@ type RequestDescription struct {
 // Parse() extracts submetrics from binary data.
 type ParserFormat interface {
 	GetMetrics() []string
-	Validate(response IpmiResponse) error
-	Parse(response IpmiResponse) map[string]uint16
+	Parse(response IpmiResponse) map[string]uint64
 }

@@ -4,7 +4,7 @@
 http://www.apache.org/licenses/LICENSE-2.0.txt
 
 
-Copyright 2015 Intel Corporation
+Copyright 2015-2016 Intel Corporation
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -74,7 +74,13 @@ func ExecIpmiToolRemote(request []byte, strct *LinuxOutOfBand, addr string) []by
 	ret, err := exec.Command(c, a...).CombinedOutput()
 	if err != nil {
 		log.Debug("Unable to run ipmitool")
-		return nil
+	}
+	if strings.Contains(string(ret), "Error") {
+		return []byte{}
+	}
+
+	if strings.Contains(string(ret), "Unable") {
+		return []byte{}
 	}
 
 	returnStrings := strings.Split(string(ret), " ")
