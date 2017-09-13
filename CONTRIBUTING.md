@@ -19,22 +19,21 @@ Once you're ready to contribute code back to this repo, start with these steps:
 
 * Fork the appropriate sub-projects that are affected by your change.
 * Clone the fork to `$GOPATH/src/github.com/intelsdi-x/`:
-
-    ```
-$ cd "${GOPATH}/src/github.com/intelsdi-x/"
-$ git clone https://github.com/intelsdi-x/snap-plugin-collector-node-manager.git
-    ```
+  ```
+  $ cd "${GOPATH}/src/github.com/intelsdi-x/"
+  $ git clone https://github.com/intelsdi-x/snap-plugin-collector-node-manager.git
+  ```
 * Create a topic branch for your change and checkout that branch:
-
-    ```
-$ git checkout -b some-topic-branch
-    ```
-* Make your changes and run the test suite if one is provided.
+  ```
+  $ git checkout -b some-topic-branch
+  ```
+* Make your changes to the code and add tests to cover contributed code.
+* Validate the changes and run the test suite if one is provided.
 * Commit your changes and push them to your fork.
 * Open a pull request for the appropriate project.
 * Contributors will review your pull request, suggest changes, and merge it when it’s ready and/or offer feedback.
 
-If you have questions feel free to contact the [maintainers](https://github.com/intelsdi-x/snap/blob/master/README.md#maintainers).
+If you have questions feel free to contact the [maintainers](https://github.com/intelsdi-x/snap/blob/master/docs/MAINTAINERS.md).
 
 ## Contributing Examples
 The most immediately helpful way you can benefit this project is by cloning the repository, adding some further examples and submitting a pull request.
