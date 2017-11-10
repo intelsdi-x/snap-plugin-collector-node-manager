@@ -25,7 +25,7 @@ import (
 	"sync"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // LinuxOutOfBand implements communication with openipmi driver on linux
