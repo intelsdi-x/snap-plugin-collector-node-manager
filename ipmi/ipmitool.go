@@ -27,7 +27,7 @@ import (
 	"strconv"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // ExecIpmiToolLocal method runs ipmitool command on a local system
